@@ -1,76 +1,95 @@
-# 🏏 IPL Auction Arena 2026 - Real-time Multiplayer Platform
+# 🏏 IPL Auction Arena 2026 - Autonomous Real-time Multiplayer Platform
 
-A full-stack, real-time multiplayer IPL Auction web platform built with pure Node.js, Web Audio synthesis, and Server-Sent Events (SSE). Pre-loaded with the full **250-player pool** from `IPL_Auction_Arena_2026_Player_Pool_250_Antigravity.csv`.
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/yuvarajsuri673/ipl-auction-arena-2026)
+[![Tests Passing](https://img.shields.io/badge/Acceptance%20Tests-17%2F17%20Passed-10b981.svg)](file:///test/acceptance_test.js)
+[![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](file:///package.json)
 
----
-
-## 🌟 Key Features
-
-1. **All 10 Real IPL 2026 Franchises**:
-   - 🟡 **CSK** (Chennai Super Kings)
-   - 🔵 **MI** (Mumbai Indians)
-   - 🔴 **RCB** (Royal Challengers Bengaluru)
-   - 🟣 **KKR** (Kolkata Knight Riders)
-   - 💗 **RR** (Rajasthan Royals)
-   - 🟠 **SRH** (Sunrisers Hyderabad)
-   - 🔴 **DC** (Delhi Capitals)
-   - 🔵 **LSG** (Lucknow Super Giants)
-   - 🔵 **GT** (Gujarat Titans)
-   - 🔴 **PBKS** (Punjab Kings)
-
-2. **Real IPL Auction Rules & Budget Constraints**:
-   - Starting Purse: **₹100.00 Cr** per franchise (customizable)
-   - Squad Size Limits: Minimum **18 players**, Maximum **25 players**
-   - Overseas Limit: Maximum **8 overseas players** per team
-   - **Automated Reserve Purse Protection**: Prevents a team from overspending so they always retain sufficient purse to satisfy the mandatory 18-player IPL minimum roster rule!
-   - Real-time Bid Increments: Dynamic increments (+₹10L, +₹20L, +₹25L, +₹50L, +₹1.0Cr) based on bid tier.
-
-3. **Intelligent AI Bidding Bots**:
-   - Any unclaimed franchise can run with autonomous AI bots.
-   - The AI evaluates player ratings, team role needs (Batters, Bowlers, Wicketkeepers, All-rounders), overseas limits, and available purse.
-   - Features natural, human-like reaction delays to simulate real bidders in the auction room!
-
-4. **Auctioneer Podium & Countdown Clock**:
-   - 15-second radial countdown timer.
-   - Stage announcements: *Bidding Open* ➔ *Going Once...* ➔ *Going Twice...* ➔ *SOLD!* (or *UNSOLD!*).
-   - Anti-sniping grace period: bids in final seconds reset the clock to ensure fair competition.
-
-5. **Pure Web Audio API Sound Effects (Zero External MP3s)**:
-   - Realistic wooden gavel strike on sold/unsold.
-   - Crisp harmonic chime on new bids.
-   - Ticking tension heartbeat on final countdown.
-   - Stadium fanfare upon player purchase.
-   - Browser text-to-speech voice announcer.
-
-6. **250-Player Explorer & Squad Analyzer**:
-   - Instant search and role filters across the full 250 player pool.
-   - Displays 2026 leaderboard stats (Runs, Strike Rate, Wickets, Economy) and overall ratings.
-   - Detailed franchise squad modal with player costs, overseas count, and playing XI rating.
+A full-stack, autonomous real-time multiplayer IPL Auction web application built with **pure Node.js**, **Web Audio synthesis**, and **Server-Sent Events (SSE)**. Pre-loaded with the complete **250-player pool** from the official IPL 2026 dataset.
 
 ---
 
-## 🚀 How to Run
+## 🌟 Core Highlights & Non-Negotiable Specifications
 
-### Method 1: Double-Click (Windows)
-Double-click [`start.bat`](file:///c:/Users/kvk47/Desktop/ipl/start.bat) in this folder. It opens your browser to `http://localhost:3000` automatically!
+1. **Autonomous Server-Driven Auction Engine**:
+   - The Admin creates the room, participants join, each selects a franchise, the Admin configures the rules (Purse, Squad size, Overseas limit, Increments, Timer), and clicks **START AUCTION**.
+   - **After that, the system does everything**:
+     - Presents players automatically on the podium.
+     - Opens bidding and manages the countdown timer.
+     - Accepts sequential bids in real-time.
+     - Declares **SOLD** (with purse deduction & squad addition) or **UNSOLD**.
+     - Intermission countdown shows winning franchise and price.
+     - Smoothly transitions to the next player automatically.
+     - Automatically completes the auction when all lots are processed!
+   - **Browser-Independent Server Process**: Even if the Admin closes their laptop or temporarily loses connection, the server continues the countdown and finalizes SOLD/UNSOLD decisions reliably.
 
-### Method 2: Command Line
-Open your terminal in `c:\Users\kvk47\Desktop\ipl` and run:
+2. **Clean, Uncluttered Dashboard Layout ("Do Not Overcrowd")**:
+   - **Left Board**: All 10 IPL Franchises (CSK, MI, RCB, KKR, RR, SRH, DC, PBKS, GT, LSG) visible to everyone with real-time purse balances and squad counts.
+   - **Center Stage**: The Player Podium focal point with player rating, role, 2026 season stats, base price, animated radial countdown timer, and big high-contrast bid button.
+   - **Right Side Tabbed Utilities**:
+     - ⚡ **Live Commentary Feed**: Real-time bid log and gavel announcements.
+     - 📝 **Private Strategy Notes**: 100% private per user, persists across browser refreshes and reconnects in `localStorage`, complete with live budget & reserve calculator.
+     - 📊 **Auction Analytics**: Processed lots progress bar, total tournament spend, and leaderboard of highest player buys.
+
+3. **Strict Official IPL Budget & Roster Regulations**:
+   - Default Starting Purse: **₹100.00 Cr** (Host-configurable to ₹120 Cr, ₹90 Cr, etc.)
+   - Squad Size Limits: **18 Minimum - 25 Maximum**
+   - Overseas Player Limit: Maximum **8 Overseas Players** per franchise
+   - **Reserve Purse Protection**: Mathematically locks the minimum required reserve (`remaining slots needed × ₹0.20 Cr`) so no team can bid themselves into an invalid roster!
+   - Concurrent Bid Protection: Simultaneous bids are processed strictly sequentially. Old bids are rejected with instantaneous UI feedback.
+
+---
+
+## 🧪 Comprehensive Acceptance Test Suite (17 / 17 Passed)
+
+To run the automated acceptance test suite:
 ```bash
+npm test
+```
+
+| Test # | Acceptance Test Case | Status |
+|---|---|---|
+| **TEST 1** | Admin creates a room and shares invitation link | ✅ **PASSED** |
+| **TEST 2** | Multiple real participants join using link | ✅ **PASSED** |
+| **TEST 3** | Each participant selects exactly one available franchise | ✅ **PASSED** |
+| **TEST 4** | Admin configures purse, squad size, overseas limit, increments, and timer | ✅ **PASSED** |
+| **TEST 5** | Admin starts the auction | ✅ **PASSED** |
+| **TEST 6** | The first player appears automatically and bidding starts | ✅ **PASSED** |
+| **TEST 7** | A participant bids and everyone sees updated highest bid | ✅ **PASSED** |
+| **TEST 8** | Timer expires with highest bidder; player automatically SOLD | ✅ **PASSED** |
+| **TEST 9** | Winning franchise's purse and squad update for everyone | ✅ **PASSED** |
+| **TEST 10** | A player receives no bids; player automatically UNSOLD | ✅ **PASSED** |
+| **TEST 11** | Next player appears automatically | ✅ **PASSED** |
+| **TEST 12** | Franchise at overseas limit cannot bid for overseas player | ✅ **PASSED** |
+| **TEST 13** | Franchise at maximum squad size (25) cannot place additional bids | ✅ **PASSED** |
+| **TEST 14** | Participant refreshes browser and recovers correct auction state | ✅ **PASSED** |
+| **TEST 15** | Two participants bid simultaneously; only valid sequential bids accepted | ✅ **PASSED** |
+| **TEST 16** | Strategy notes remain private and persist after reconnecting | ✅ **PASSED** |
+| **TEST 17** | Final player processed and auction completes automatically | ✅ **PASSED** |
+
+---
+
+## 🚀 Instant Deployment to Free Websites
+
+### Option A: 1-Click Deploy to Render (Recommended Free Web Service)
+1. Fork or push to your GitHub account:
+   [https://github.com/yuvarajsuri673/ipl-auction-arena-2026](https://github.com/yuvarajsuri673/ipl-auction-arena-2026)
+2. Click the **Deploy to Render** button above or link your repo at [render.com](https://render.com).
+3. Render automatically reads [`render.yaml`](file:///render.yaml), builds, and hosts the persistent Node.js SSE web service with free HTTPS.
+
+### Option B: Run Locally or on Any VPS
+```bash
+git clone https://github.com/yuvarajsuri673/ipl-auction-arena-2026.git
+cd ipl-auction-arena-2026
+npm install
 npm start
 ```
-or
-```bash
-node server.js
-```
-
-Then open your browser at:
-👉 **[http://localhost:3000](http://localhost:3000)**
+Open **`http://localhost:3000`** in any web browser.
 
 ---
 
-## 👥 How to Play with Friends (Multiplayer)
-
-1. **On the Same Computer**: Open multiple browser tabs (or an incognito tab). Each tab can claim a different franchise (e.g. Tab 1 = CSK, Tab 2 = MI, Tab 3 = RCB).
-2. **On the Same Wi-Fi Network**: Find your computer's local IP address (run `ipconfig` in cmd), and your friends can open `http://<YOUR_IP>:3000` on their laptops or smartphones!
-3. **Auctioneer Controls**: Click **"Host Mode"** in the top navigation bar to access Auctioneer controls (Call Next Player, Start Bidding Clock, Drop Hammer, Reset Room).
+## 👥 How to Play in Multiplayer
+1. Open the app as Host and click **"Create Auction Room"**.
+2. Click **"Copy Invite Link"** and send it to your friends.
+3. Friends open the link, enter their name, and choose their IPL franchise.
+4. Host clicks **"START AUCTION NOW"**.
+5. The autonomous engine takes over and orchestrates the entire live mega auction!
