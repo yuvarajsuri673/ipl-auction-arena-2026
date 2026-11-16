@@ -45,7 +45,7 @@ function generateRoomCode() {
 function createRoom(roomId, options = {}) {
   const teamCount = options.teamCount === 8 ? 8 : 10; // Default 10 teams as required
   const teamKeys = teamCount === 8 ? EIGHT_TEAMS : TEN_TEAMS;
-  const initialPurse = options.initialPurse !== undefined ? Number(options.initialPurse) : 100.0;
+  const initialPurse = options.initialPurse !== undefined ? Number(options.initialPurse) : 120.0;
   const hostName = options.hostName || 'Auctioneer';
 
   const franchises = {};
@@ -82,13 +82,14 @@ function createRoom(roomId, options = {}) {
       minSquad: options.minSquad !== undefined ? Number(options.minSquad) : 18,
       maxSquad: options.maxSquad !== undefined ? Number(options.maxSquad) : 25,
       maxOverseas: options.maxOverseas !== undefined ? Number(options.maxOverseas) : 8,
-      minReservePrice: options.minReservePrice !== undefined ? Number(options.minReservePrice) : 0.20,
+      minReservePrice: options.minReservePrice !== undefined ? Number(options.minReservePrice) : 0.75,
       timerDuration: options.timerDuration !== undefined ? Number(options.timerDuration) : 15,
       bidIncrementRule: options.bidIncrementRule || 'standard',
       autoAiForUnclaimed: options.autoAiForUnclaimed !== false
     },
     players: players,
     franchises: franchises,
+    auctionHistory: [],
     auction: {
       status: 'idle', // idle, bidding, going_once, going_twice, sold, unsold, paused, completed
       currentPlayerIndex: -1,
@@ -112,13 +113,15 @@ function createRoom(roomId, options = {}) {
   return room;
 }
 
-// Dynamic Bid increments (IPL Standard)
+// Standardised Price-Based Increment Structure
+// ₹75 Lakhs – ₹1.99 Cr : ₹10 Lakhs (0.10 Cr)
+// ₹2 Cr – ₹4.99 Cr     : ₹25 Lakhs (0.25 Cr)
+// ₹5 Cr – ₹9.99 Cr     : ₹50 Lakhs (0.50 Cr)
+// ₹10 Cr and above     : ₹1 Cr (1.00 Cr)
 function getNextBidIncrement(currentBid) {
-  if (currentBid <= 0) return 0.20;
-  if (currentBid < 1.0) return 0.10;
-  if (currentBid < 2.0) return 0.20;
-  if (currentBid < 5.0) return 0.25;
-  if (currentBid < 10.0) return 0.50;
+  if (currentBid < 2.00) return 0.10;
+  if (currentBid < 5.00) return 0.25;
+  if (currentBid < 10.00) return 0.50;
   return 1.00;
 }
 
@@ -215,7 +218,8 @@ function getSanitizedRoomState(room) {
       isPaused: room.auction.isPaused,
       nextIncrement: getNextBidIncrement(room.auction.currentBid)
     },
-    activityLog: room.activityLog.slice(-50)
+    activityLog: room.activityLog.slice(-50),
+    auctionHistory: (room.auctionHistory || []).slice(0, 100)
   };
 }
 
@@ -399,6 +403,28 @@ function resolveCurrentLot(room) {
       log: logEntry
     });
   }
+
+  // Record into official auction history log
+  if (!room.auctionHistory) room.auctionHistory = [];
+  room.auctionHistory.unshift({
+    id: Date.now(),
+    lotNumber: room.auction.currentPlayerIndex + 1,
+    player: {
+      id: player.id,
+      name: player.name,
+      role: player.role,
+      nationality: player.nationality,
+      isOverseas: player.isOverseas,
+      overallRating: player.overallRating,
+      basePrice: player.basePrice
+    },
+    status: player.status,
+    soldTo: player.soldTo,
+    soldToName: player.soldTo && room.franchises[player.soldTo] ? room.franchises[player.soldTo].name : null,
+    soldPrice: player.soldPrice || 0,
+    timestamp: Date.now(),
+    time: new Date().toLocaleTimeString()
+  });
 
   broadcastState(room);
 
@@ -602,6 +628,7 @@ function calculateAiValuation(room, franchise, player) {
 
 // Parse POST body
 function parseBody(req) {
+  if (req._parsedBody) return Promise.resolve(req._parsedBody);
   return new Promise((resolve, reject) => {
     let body = '';
     req.on('data', chunk => {
@@ -610,8 +637,10 @@ function parseBody(req) {
     });
     req.on('end', () => {
       try {
-        resolve(body ? JSON.parse(body) : {});
+        req._parsedBody = body ? JSON.parse(body) : {};
+        resolve(req._parsedBody);
       } catch (e) {
+        req._parsedBody = {};
         resolve({});
       }
     });
@@ -635,7 +664,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   // SSE Stream endpoint
-  if (pathname === '/api/stream') {
+  if (pathname === '/api/stream' || pathname === '/api/events') {
     const roomId = (query.room || '').trim().toUpperCase();
     let room = rooms[roomId];
 
@@ -674,7 +703,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   // REST API: Create room (Host mode)
-  if (pathname === '/api/room/create' && req.method === 'POST') {
+  if ((pathname === '/api/room/create' || pathname === '/api/create-room') && req.method === 'POST') {
     const body = await parseBody(req);
     const roomId = (body.roomId || generateRoomCode()).trim().toUpperCase();
     const room = createRoom(roomId, body);
@@ -686,12 +715,13 @@ const server = http.createServer(async (req, res) => {
       hostToken: room.hostToken,
       teamCount: room.teamCount,
       hostName: room.hostName,
-      config: room.config
+      config: room.config,
+      room: getSanitizedRoomState(room)
     }));
   }
 
   // REST API: Join room check
-  if (pathname === '/api/room/join' && req.method === 'POST') {
+  if ((pathname === '/api/room/join' || pathname === '/api/join-room') && req.method === 'POST') {
     const body = await parseBody(req);
     const roomId = (body.roomId || '').trim().toUpperCase();
     const room = rooms[roomId];
@@ -708,7 +738,8 @@ const server = http.createServer(async (req, res) => {
       roomName: room.name,
       stage: room.stage,
       teamCount: room.teamCount,
-      config: room.config
+      config: room.config,
+      room: getSanitizedRoomState(room)
     }));
   }
 
@@ -755,8 +786,63 @@ const server = http.createServer(async (req, res) => {
     return res.end(JSON.stringify({ success: true, config: room.config }));
   }
 
+  // REST API: Admin reviews/updates player starting base price
+  if (pathname === '/api/room/update-player-price' && req.method === 'POST') {
+    const body = await parseBody(req);
+    const roomId = (body.roomId || '').trim().toUpperCase();
+    const room = rooms[roomId];
+
+    if (!room) {
+      res.writeHead(404, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ success: false, message: 'Room not found' }));
+    }
+
+    const playerId = body.playerId;
+    const newPrice = Number(parseFloat(body.basePrice).toFixed(2));
+
+    if (isNaN(newPrice) || newPrice < 0.75 || newPrice > 2.00) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ success: false, message: 'Base price must be between ₹0.75 Cr and ₹2.00 Cr' }));
+    }
+
+    const player = room.players.find(p => p.id === playerId);
+    if (!player) {
+      res.writeHead(404, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ success: false, message: 'Player not found' }));
+    }
+
+    const oldPrice = player.basePrice;
+    player.basePrice = newPrice;
+
+    if (room.auction.currentPlayer && room.auction.currentPlayer.id === playerId && !room.auction.currentBidder) {
+      room.auction.currentPlayer.basePrice = newPrice;
+      room.auction.currentBid = newPrice;
+    }
+
+    const logEntry = {
+      id: Date.now(),
+      text: `✏️ Base price for ${player.name} updated from ₹${oldPrice.toFixed(2)} Cr to ₹${newPrice.toFixed(2)} Cr by ${room.hostName}.`,
+      time: new Date().toLocaleTimeString()
+    };
+    room.activityLog.push(logEntry);
+    if (!room.auctionHistory) room.auctionHistory = [];
+    room.auctionHistory.unshift({
+      id: Date.now(),
+      type: 'price_adjustment',
+      player: { id: player.id, name: player.name },
+      oldPrice: oldPrice,
+      newPrice: newPrice,
+      timestamp: Date.now(),
+      time: new Date().toLocaleTimeString()
+    });
+
+    broadcastState(room);
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ success: true, player: player }));
+  }
+
   // REST API: Claim franchise in lobby
-  if (pathname === '/api/room/claim-team' && req.method === 'POST') {
+  if ((pathname === '/api/room/claim-team' || pathname === '/api/claim-franchise') && req.method === 'POST') {
     const body = await parseBody(req);
     const roomId = (body.roomId || '').trim().toUpperCase();
     const room = rooms[roomId];
@@ -798,7 +884,7 @@ const server = http.createServer(async (req, res) => {
       broadcastState(room);
 
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      return res.end(JSON.stringify({ success: true, franchise: room.franchises[code] }));
+      return res.end(JSON.stringify({ success: true, franchise: room.franchises[code], room: getSanitizedRoomState(room) }));
     }
 
     res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -806,8 +892,8 @@ const server = http.createServer(async (req, res) => {
   }
 
   // REST API: Start auction
-  if (pathname === '/api/room/start-auction' && req.method === 'POST') {
-    const body = await parseBody(req);
+  if ((pathname === '/api/room/start-auction' || pathname === '/api/start-auction' || pathname === '/api/host-action' && (await parseBody(req)).action === 'start') && req.method === 'POST') {
+    const body = req._parsedBody || (await parseBody(req));
     const roomId = (body.roomId || '').trim().toUpperCase();
     const room = rooms[roomId];
 
@@ -818,11 +904,11 @@ const server = http.createServer(async (req, res) => {
 
     startAuctionFromLobby(room);
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    return res.end(JSON.stringify({ success: true, stage: room.stage }));
+    return res.end(JSON.stringify({ success: true, stage: room.stage, room: getSanitizedRoomState(room) }));
   }
 
   // REST API: Place bid
-  if (pathname === '/api/room/bid' && req.method === 'POST') {
+  if ((pathname === '/api/room/bid' || pathname === '/api/bid') && req.method === 'POST') {
     const body = await parseBody(req);
     const roomId = (body.roomId || '').trim().toUpperCase();
     const room = rooms[roomId];
@@ -831,13 +917,14 @@ const server = http.createServer(async (req, res) => {
       return res.end(JSON.stringify({ success: false, message: 'Room not found' }));
     }
 
-    const result = placeBid(room, body.franchiseCode, body.customAmount);
+    const amount = body.customAmount !== undefined ? body.customAmount : body.amount;
+    const result = placeBid(room, body.franchiseCode, amount);
     res.writeHead(result.success ? 200 : 400, { 'Content-Type': 'application/json' });
     return res.end(JSON.stringify(result));
   }
 
   // REST API: Admin / Auctioneer commands
-  if (pathname === '/api/room/auctioneer' && req.method === 'POST') {
+  if ((pathname === '/api/room/auctioneer' || pathname === '/api/host-action') && req.method === 'POST') {
     const body = await parseBody(req);
     const roomId = (body.roomId || '').trim().toUpperCase();
     const room = rooms[roomId];

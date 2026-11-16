@@ -4,8 +4,9 @@
 class AuctionSoundEngine {
   constructor() {
     this.ctx = null;
-    this.muted = false;
-    this.speechEnabled = true;
+    // Default sound effects: ON, Default Voice Assistant: OFF (strictly as required)
+    this.muted = localStorage.getItem('ipl_sound_effects') === 'false';
+    this.speechEnabled = localStorage.getItem('ipl_voice_assistant') === 'true'; // Default is OFF
   }
 
   init() {
@@ -22,7 +23,26 @@ class AuctionSoundEngine {
 
   toggleMute() {
     this.muted = !this.muted;
+    localStorage.setItem('ipl_sound_effects', (!this.muted).toString());
     return this.muted;
+  }
+
+  setMute(isMuted) {
+    this.muted = Boolean(isMuted);
+    localStorage.setItem('ipl_sound_effects', (!this.muted).toString());
+    return this.muted;
+  }
+
+  toggleVoiceAssistant() {
+    this.speechEnabled = !this.speechEnabled;
+    localStorage.setItem('ipl_voice_assistant', this.speechEnabled.toString());
+    return this.speechEnabled;
+  }
+
+  setVoiceAssistant(enabled) {
+    this.speechEnabled = Boolean(enabled);
+    localStorage.setItem('ipl_voice_assistant', this.speechEnabled.toString());
+    return this.speechEnabled;
   }
 
   // Authentic wooden gavel hammer strike
@@ -34,7 +54,7 @@ class AuctionSoundEngine {
     const t = this.ctx.currentTime;
 
     // Transient crack (noise burst)
-    const bufferSize = this.ctx.sampleRate * 0.05;
+    const bufferSize = Math.floor(this.ctx.sampleRate * 0.05);
     const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
     const data = buffer.getChannelData(0);
     for (let i = 0; i < bufferSize; i++) {
@@ -84,6 +104,10 @@ class AuctionSoundEngine {
     osc2.stop(t + 0.25);
   }
 
+  playGavelStrike() {
+    this.playGavel();
+  }
+
   // Crisp metallic bid chime
   playBidChime() {
     if (this.muted) return;
@@ -114,6 +138,10 @@ class AuctionSoundEngine {
     oscHarmonic.start(t);
     osc.stop(t + 0.35);
     oscHarmonic.stop(t + 0.35);
+  }
+
+  playNewLot() {
+    this.playBidChime();
   }
 
   // Timer tick for final countdown
@@ -148,7 +176,7 @@ class AuctionSoundEngine {
     // First: gavel strike
     this.playGavel();
 
-    // Second: fanfare chords after 200ms
+    // Second: fanfare chords after 150ms
     setTimeout(() => {
       if (this.muted || !this.ctx) return;
       const notes = [523.25, 659.25, 783.99, 1046.5]; // C5, E5, G5, C6
@@ -184,6 +212,31 @@ class AuctionSoundEngine {
       utterance.volume = 0.85;
       window.speechSynthesis.speak(utterance);
     } catch (e) {}
+  }
+
+  announceAuctionStart() {
+    this.speak('IPL Mega Auction 2026 has begun. Autonomous bidding is live.');
+  }
+
+  announceNewPlayer(player) {
+    if (!player) return;
+    this.speak(`Next player on the podium: ${player.name}, ${player.role}, starting base price ${player.basePrice} crore.`);
+  }
+
+  announceBid(franchiseName, amount) {
+    this.speak(`Bid: ${franchiseName}, ${amount.toFixed(2)} crore.`);
+  }
+
+  announceSold(playerName, franchiseName, price) {
+    this.speak(`Sold! ${playerName} acquired by ${franchiseName} for ${price.toFixed(2)} crore.`);
+  }
+
+  announceUnsold(playerName) {
+    this.speak(`Unsold. No bids placed for ${playerName}.`);
+  }
+
+  announceConclusion() {
+    this.speak('The IPL Mega Auction has concluded. All 10 squads finalized.');
   }
 }
 

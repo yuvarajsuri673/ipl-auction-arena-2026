@@ -27,38 +27,43 @@ function parseCSVLine(text) {
 
 // Famous player baseline ratings when stats were not in 2026 leaderboard extract
 const FAMOUS_PLAYER_RATINGS = {
-  'MS Dhoni': { rating: 88, basePrice: 2.0 },
-  'Sarfaraz Khan': { rating: 76, basePrice: 1.0 },
-  'Rahul Chahar': { rating: 78, basePrice: 1.0 },
-  'Khaleel Ahmed': { rating: 79, basePrice: 1.5 },
-  'Mukesh Choudhary': { rating: 73, basePrice: 0.5 },
-  'Jamie Overton': { rating: 77, basePrice: 1.0 },
-  'Dewald Brevis': { rating: 79, basePrice: 1.0 },
-  'Matthew Short': { rating: 76, basePrice: 1.0 },
-  'Spencer Johnson': { rating: 81, basePrice: 1.5 },
+  'MS Dhoni': { rating: 92, basePrice: 2.0 },
+  'Sarfaraz Khan': { rating: 78, basePrice: 1.0 },
+  'Rahul Chahar': { rating: 80, basePrice: 1.5 },
+  'Khaleel Ahmed': { rating: 82, basePrice: 1.5 },
+  'Mukesh Choudhary': { rating: 75, basePrice: 1.0 },
+  'Jamie Overton': { rating: 78, basePrice: 1.0 },
+  'Dewald Brevis': { rating: 81, basePrice: 1.5 },
+  'Matthew Short': { rating: 77, basePrice: 1.0 },
+  'Spencer Johnson': { rating: 83, basePrice: 1.5 },
   'Zak Foulkes': { rating: 74, basePrice: 0.75 },
-  'Matt Henry': { rating: 82, basePrice: 1.5 },
-  'Noor Ahmad': { rating: 85, basePrice: 2.0 },
-  'Shreyas Gopal': { rating: 75, basePrice: 0.5 },
-  'Aman Khan': { rating: 70, basePrice: 0.3 },
-  'Prashant Veer': { rating: 68, basePrice: 0.3 },
-  'Ayush Mhatre': { rating: 69, basePrice: 0.3 },
-  'Urvil Patel': { rating: 72, basePrice: 0.3 },
-  'Ramakrishna Ghosh': { rating: 67, basePrice: 0.3 },
-  'Gurjapneet Singh': { rating: 71, basePrice: 0.3 }
+  'Matt Henry': { rating: 84, basePrice: 1.5 },
+  'Noor Ahmad': { rating: 87, basePrice: 2.0 },
+  'Shreyas Gopal': { rating: 75, basePrice: 1.0 },
+  'Aman Khan': { rating: 72, basePrice: 0.75 },
+  'Prashant Veer': { rating: 70, basePrice: 0.75 },
+  'Ayush Mhatre': { rating: 71, basePrice: 0.75 },
+  'Urvil Patel': { rating: 73, basePrice: 0.75 },
+  'Ramakrishna Ghosh': { rating: 69, basePrice: 0.75 },
+  'Gurjapneet Singh': { rating: 72, basePrice: 0.75 }
 };
 
-function determineBasePrice(rating, isOverseas, isUncapped) {
-  if (isUncapped) {
-    if (rating >= 75) return 0.50;
-    if (rating >= 68) return 0.30;
-    return 0.20;
+// Standardised Player Base Price System (₹75 Lakhs min to ₹2.00 Cr max)
+function determineBasePrice(rating, isOverseas, isUncapped, stats = {}) {
+  // Premium / Top-rated players start directly at ₹2 Crore
+  if (rating >= 84 || (stats.runs && stats.runs >= 400) || (stats.wickets && stats.wickets >= 14)) {
+    return 2.00;
   }
-  if (rating >= 88) return 2.00;
-  if (rating >= 80) return 1.50;
-  if (rating >= 72) return 1.00;
-  if (rating >= 65) return 0.75;
-  return 0.50;
+  // High-tier players (₹1.50 Crore)
+  if (rating >= 78 || (isOverseas && rating >= 74) || (stats.runs && stats.runs >= 250) || (stats.wickets && stats.wickets >= 10)) {
+    return 1.50;
+  }
+  // Mid-tier players (₹1.00 Crore)
+  if (rating >= 70 || isOverseas) {
+    return 1.00;
+  }
+  // Minimum starting price: ₹75 Lakhs (0.75 Cr)
+  return 0.75;
 }
 
 function normalizeRole(role) {
@@ -114,8 +119,22 @@ for (let i = 1; i < lines.length; i++) {
     }
   }
 
-  if (isNaN(basePrice) || basePrice <= 0) {
-    basePrice = determineBasePrice(rating, isOverseas, isUncapped);
+  const stats = {
+    matchesBatted: parseInt(row['2026_matches_batted']) || 0,
+    runs: parseInt(row['2026_runs']) || 0,
+    highScore: parseInt(row['2026_high_score']) || 0,
+    strikeRate: parseFloat(row['2026_batting_strike_rate']) || 0,
+    fours: parseInt(row['2026_fours']) || 0,
+    sixes: parseInt(row['2026_sixes']) || 0,
+    matchesBowled: parseInt(row['2026_matches_bowled']) || 0,
+    overs: parseFloat(row['2026_overs']) || 0,
+    wickets: parseInt(row['2026_wickets']) || 0,
+    economy: parseFloat(row['2026_economy_rate']) || 0,
+    bowlingAvg: parseFloat(row['2026_bowling_average']) || 0
+  };
+
+  if (isNaN(basePrice) || basePrice < 0.75 || basePrice > 2.00) {
+    basePrice = determineBasePrice(rating, isOverseas, isUncapped, stats);
   }
 
   const role = normalizeRole(row['primary_role']);
@@ -136,19 +155,7 @@ for (let i = 1; i < lines.length; i++) {
     bowlingRating: Math.round(bowlingRating),
     overallRating: rating,
     basePrice: Number(basePrice.toFixed(2)),
-    stats: {
-      matchesBatted: parseInt(row['2026_matches_batted']) || 0,
-      runs: parseInt(row['2026_runs']) || 0,
-      highScore: parseInt(row['2026_high_score']) || 0,
-      strikeRate: parseFloat(row['2026_batting_strike_rate']) || 0,
-      fours: parseInt(row['2026_fours']) || 0,
-      sixes: parseInt(row['2026_sixes']) || 0,
-      matchesBowled: parseInt(row['2026_matches_bowled']) || 0,
-      overs: parseFloat(row['2026_overs']) || 0,
-      wickets: parseInt(row['2026_wickets']) || 0,
-      economy: parseFloat(row['2026_economy_rate']) || 0,
-      bowlingAvg: parseFloat(row['2026_bowling_average']) || 0
-    },
+    stats: stats,
     status: 'Available', // Available, Current, Sold, Unsold
     soldTo: null,
     soldPrice: 0
