@@ -3,6 +3,7 @@
 const state = {
   currentScreen: 'landing', // 'landing', 'lobby', 'auction'
   currentRightTab: 'feed', // 'feed', 'notes', 'stats'
+  mobileView: 'podium', // 'podium', 'teams', 'notes', 'feed'
   roomId: null,
   userName: localStorage.getItem('ipl_user_name') || '',
   isHost: false,
@@ -14,6 +15,8 @@ const state = {
 
 // Initialize app on DOM ready
 document.addEventListener('DOMContentLoaded', () => {
+  document.body.setAttribute('data-mob-view', 'podium');
+
   // Check URL query parameters for room code or recover session
   const params = new URLSearchParams(window.location.search);
   const urlRoom = params.get('room');
@@ -681,10 +684,48 @@ function renderAuctionScreen() {
 
   // Render sidebars
   renderFranchisesSidebar(room);
+  renderMobileFranchisesStrip(room);
   renderActivityLog(room);
   renderStatsTab(room);
   updateBudgetCalculator(room, f);
   updateUserPill();
+}
+
+// Render Horizontal Franchise Strip for Mobile Devices
+function renderMobileFranchisesStrip(room) {
+  const strip = document.getElementById('mobile-franchise-strip');
+  if (!strip) return;
+  strip.innerHTML = '';
+
+  for (const [code, f] of Object.entries(room.franchises)) {
+    const isCurrentBidder = room.auction.currentBidder === code;
+    const isMe = state.userFranchise === code;
+    const chip = document.createElement('div');
+    chip.className = `mob-team-chip ${isCurrentBidder ? 'active-bidder' : ''} ${isMe ? 'my-chip' : ''}`;
+    chip.innerHTML = `
+      <div class="chip-logo" style="background:${f.color}; color:${f.textColor}">${f.shortName}</div>
+      <span class="chip-purse">₹${f.purse.toFixed(0)}Cr</span>
+      <span style="color:var(--text-muted); font-size:0.65rem">(${f.squad.length})</span>
+    `;
+    chip.onclick = () => openSquadModal(code);
+    strip.appendChild(chip);
+  }
+}
+
+// Switch Mobile Segmented View (Arena / 10 Teams / Strategy Notes / Feed)
+function switchMobileView(view) {
+  state.mobileView = view;
+  document.body.setAttribute('data-mob-view', view);
+
+  document.querySelectorAll('.mobile-nav-item').forEach(el => el.classList.remove('active'));
+  const btn = document.getElementById(`mob-nav-${view}`);
+  if (btn) btn.classList.add('active');
+
+  if (view === 'notes') {
+    switchRightTab('notes');
+  } else if (view === 'feed') {
+    switchRightTab('feed');
+  }
 }
 
 // Bidding Controls (TEST 7, 12, 13)

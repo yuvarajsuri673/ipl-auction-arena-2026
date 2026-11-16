@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0d14">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>IPL Auction Arena 2026 - Real-time Multiplayer</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -271,8 +274,13 @@
        SCREEN 3: LIVE AUCTION STADIUM FLOOR
   ======================================================== -->
   <main class="main-layout hidden" id="screen-auction">
+    <!-- Mobile Horizontal Franchises Quick-Strip (Always Visible on Mobile) -->
+    <div class="mobile-franchise-strip" id="mobile-franchise-strip">
+      <!-- Populated with compact chips for all 10 franchises -->
+    </div>
+
     <!-- Left Sidebar: All 10 Franchises (Visible to everyone) -->
-    <aside class="sidebar-left">
+    <aside class="sidebar-left" id="sidebar-left">
       <div class="glass-panel">
         <div class="panel-header">
           <div class="panel-title">
@@ -288,7 +296,7 @@
     </aside>
 
     <!-- Center Stage: Auction Floor -->
-    <section class="auction-stage">
+    <section class="auction-stage" id="auction-stage">
       <!-- Player Podium -->
       <div class="glass-panel player-podium">
         <!-- Empty Podium State -->
@@ -416,7 +424,7 @@
     </section>
 
     <!-- Right Sidebar: Clean 3-Tab Panel (Prevents Overcrowding!) -->
-    <aside class="sidebar-right">
+    <aside class="sidebar-right" id="sidebar-right">
       <div class="glass-panel" style="display:flex; flex-direction:column; height:100%">
         <!-- Tab Headers -->
         <div class="tab-headers">
@@ -486,6 +494,26 @@
         </div>
       </div>
     </aside>
+
+    <!-- Mobile Bottom Navigation Bar (Visible only on screens <= 900px) -->
+    <nav class="mobile-bottom-nav" id="mobile-bottom-nav">
+      <button class="mobile-nav-item active" id="mob-nav-podium" onclick="switchMobileView('podium')">
+        <span class="mob-nav-icon">🏏</span>
+        <span class="mob-nav-label">Arena</span>
+      </button>
+      <button class="mobile-nav-item" id="mob-nav-teams" onclick="switchMobileView('teams')">
+        <span class="mob-nav-icon">🛡️</span>
+        <span class="mob-nav-label">10 Teams</span>
+      </button>
+      <button class="mobile-nav-item" id="mob-nav-notes" onclick="switchMobileView('notes')">
+        <span class="mob-nav-icon">📝</span>
+        <span class="mob-nav-label">Notes</span>
+      </button>
+      <button class="mobile-nav-item" id="mob-nav-feed" onclick="switchMobileView('feed')">
+        <span class="mob-nav-icon">⚡</span>
+        <span class="mob-nav-label">Feed</span>
+      </button>
+    </nav>
   </main>
 
   <!-- Squad Details Modal (Inspect Any of the 10 Franchises) -->
