@@ -1,0 +1,20 @@
+{
+  "name": "ipl-auction-arena-2026",
+  "version": "1.0.0",
+  "description": "Real-time Multiplayer IPL Auction Arena with 250 players pool, AI bidding bots, sound engine, and live synchronisation.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test/acceptance_test.js && node test/http_integration_test.js",
+    "build-data": "node data/build_data.js"
+  },
+  "keywords": [
+    "ipl",
+    "cricket",
+    "auction",
+    "multiplayer",
+    "realtime"
+  ],
+  "author": "",
+  "license": "ISC"
+}

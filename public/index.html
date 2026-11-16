@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IPL Auction Arena 2026 - Real-time Multiplayer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Rajdhani:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Header -->
+  <header>
+    <div class="top-bar">
+      <div class="brand" onclick="goHome()">
+        <div class="brand-icon">🏆</div>
+        <div>
+          <h1>IPL Auction Arena</h1>
+          <div style="font-size:0.7rem; color:var(--text-muted)">Real-time Multiplayer Autonomous Auction</div>
+        </div>
+        <span class="brand-badge" id="header-room-tag">LOBBY</span>
+      </div>
+
+      <div class="header-actions">
+        <div class="user-pill" id="user-pill">
+          <span id="user-pill-text">Not in Room</span>
+        </div>
+        <button class="btn-icon" id="btn-copy-header-link" onclick="copyInviteLink()" title="Copy Invitation Link">
+          🔗 Invite
+        </button>
+        <button class="btn-icon" id="btn-view-pool" title="View 250 Player Pool">
+          📋 250 Players
+        </button>
+        <button class="btn-icon" id="btn-toggle-sound" title="Toggle Sound">
+          <span id="sound-icon">🔊</span>
+        </button>
+        <button class="btn-icon btn-exit" id="btn-leave-room" onclick="goHome()" title="Leave Room / Return Home">
+          🚪 Exit
+        </button>
+      </div>
+    </div>
+
+    <!-- Live Ticker -->
+    <div class="ticker-bar" id="ticker-bar">
+      <span class="ticker-tag" id="ticker-tag">LIVE</span>
+      <span class="ticker-text" id="ticker-text">Welcome to IPL Auction Arena 2026! Create a room as Host or join with an invitation link.</span>
+    </div>
+  </header>
+
+  <!-- ========================================================
+       SCREEN 1: LANDING & ROOM CREATION
+  ======================================================== -->
+  <div id="screen-landing" class="landing-container">
+    <div class="landing-hero">
+      <div style="font-size:3.5rem">🏏</div>
+      <h2 class="landing-title">IPL MEGA AUCTION 2026</h2>
+      <p class="landing-subtitle">
+        Fully automated real-time multiplayer IPL auction engine. Host a room, invite friends to pick franchises, configure rules, and let the autonomous server engine conduct the entire auction!
+      </p>
+    </div>
+
+    <div class="landing-cards-grid">
+      <!-- Card A: Create Room (Host Mode) -->
+      <div class="landing-card">
+        <div class="landing-card-header">
+          <div class="landing-card-icon">👑</div>
+          <div>
+            <h3 class="landing-card-title">Host an Auction</h3>
+            <p class="landing-card-desc">Create a room as the Auctioneer & invite up to 10 friends.</p>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Auctioneer / Host Name</label>
+          <input type="text" id="host-create-name" class="form-input" placeholder="e.g. BCCI Auctioneer" value="Auctioneer">
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label">Team Format</label>
+            <select id="host-create-teams" class="form-select">
+              <option value="10" selected>10 Teams (All 10 Franchises)</option>
+              <option value="8">8 Teams Format</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Starting Purse</label>
+            <select id="host-create-purse" class="form-select">
+              <option value="100" selected>₹100.00 Cr (Standard)</option>
+              <option value="120">₹120.00 Cr (Mega Cap)</option>
+              <option value="90">₹90.00 Cr</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label">Min / Max Squad</label>
+            <select id="host-create-squad" class="form-select">
+              <option value="18-25" selected>18 Min - 25 Max</option>
+              <option value="15-20">15 Min - 20 Max</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Countdown Timer</label>
+            <select id="host-create-timer" class="form-select">
+              <option value="15" selected>15 Seconds</option>
+              <option value="10">10 Seconds (Fast)</option>
+              <option value="20">20 Seconds (Tactical)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Room Code (Auto or custom)</label>
+          <input type="text" id="host-create-room-id" class="form-input" placeholder="e.g. IPL-2026" value="IPL-2026" style="text-transform:uppercase; font-weight:800; letter-spacing:1px">
+        </div>
+
+        <button class="btn-primary-action" onclick="createRoomAsHost()">
+          <span>👑 Create Auction Room</span>
+        </button>
+      </div>
+
+      <!-- Card B: Join Existing Room -->
+      <div class="landing-card">
+        <div class="landing-card-header">
+          <div class="landing-card-icon">🎮</div>
+          <div>
+            <h3 class="landing-card-title">Join as Franchise</h3>
+            <p class="landing-card-desc">Enter your manager name and room code to claim your team.</p>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Your Manager Name</label>
+          <input type="text" id="join-user-name" class="form-input" placeholder="e.g. Rohit or Dhoni" value="">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Room Code</label>
+          <input type="text" id="join-room-id" class="form-input" placeholder="e.g. IPL-2026" value="IPL-2026" style="text-transform:uppercase; font-weight:800; letter-spacing:1px">
+        </div>
+
+        <div style="flex:1"></div>
+
+        <button class="btn-secondary-action" onclick="joinRoomAsPlayer()">
+          <span>🚀 Enter Room Lobby</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       SCREEN 2: WAITING LOBBY
+  ======================================================== -->
+  <div id="screen-lobby" class="lobby-container hidden">
+    <!-- Lobby Top Banner -->
+    <div class="lobby-header-banner">
+      <div>
+        <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.4rem; flex-wrap:wrap">
+          <span style="font-size:1.25rem; font-weight:800" id="lobby-room-name">IPL 2026 Mega Auction (10 Teams)</span>
+          <span class="tag tag-role" id="lobby-format-tag">10 TEAMS</span>
+        </div>
+        <div style="color:var(--text-muted); font-size:0.85rem">
+          Host: <strong id="lobby-host-name" style="color:var(--accent-gold)">Auctioneer</strong> | Status: <span style="color:#facc15; font-weight:700">⏳ Waiting for managers to select franchises</span>
+        </div>
+      </div>
+
+      <div class="room-code-badge">
+        <span style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase">Room Code</span>
+        <span class="room-code-text" id="lobby-room-code-display">IPL-2026</span>
+        <button class="btn-copy-code" onclick="copyInviteLink()">📋 Copy Invite Link</button>
+      </div>
+    </div>
+
+    <!-- Admin Rules & Configuration Panel (TEST 4) -->
+    <div class="glass-panel lobby-config-panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <span>⚙️</span>
+          <span>Auction Rules & Configuration</span>
+        </div>
+        <span class="tag tag-india" id="lobby-config-editable-badge">View Only</span>
+      </div>
+
+      <div class="lobby-config-grid">
+        <div class="config-item">
+          <span class="config-label">Starting Purse</span>
+          <div class="config-field" id="cfg-purse-display">
+            <input type="number" id="cfg-purse-input" class="config-input" value="100" min="50" max="200" step="5" disabled>
+            <span class="config-unit">₹ Cr</span>
+          </div>
+        </div>
+
+        <div class="config-item">
+          <span class="config-label">Squad Size</span>
+          <div class="config-field">
+            <span style="font-size:0.8rem; color:var(--text-muted)">Min</span>
+            <input type="number" id="cfg-minsquad-input" class="config-input" value="18" min="15" max="25" disabled>
+            <span style="font-size:0.8rem; color:var(--text-muted)">Max</span>
+            <input type="number" id="cfg-maxsquad-input" class="config-input" value="25" min="18" max="25" disabled>
+          </div>
+        </div>
+
+        <div class="config-item">
+          <span class="config-label">Overseas Limit</span>
+          <div class="config-field">
+            <input type="number" id="cfg-overseas-input" class="config-input" value="8" min="4" max="10" disabled>
+            <span class="config-unit">Max Players</span>
+          </div>
+        </div>
+
+        <div class="config-item">
+          <span class="config-label">Timer Duration</span>
+          <div class="config-field">
+            <input type="number" id="cfg-timer-input" class="config-input" value="15" min="5" max="60" disabled>
+            <span class="config-unit">Seconds</span>
+          </div>
+        </div>
+
+        <div class="config-item" style="grid-column: span 2">
+          <span class="config-label">Bid Increments</span>
+          <div style="font-size:0.85rem; color:#cbd5e1; padding-top:0.3rem">
+            Standard IPL: &lt;1 Cr: +10L | 1-2 Cr: +20L | 2-5 Cr: +25L | 5-10 Cr: +50L | 10+ Cr: +1 Cr
+          </div>
+        </div>
+      </div>
+
+      <!-- Host Action Bar inside Lobby -->
+      <div class="lobby-host-bar hidden" id="lobby-host-bar">
+        <div style="flex:1">
+          <div style="font-size:1.05rem; font-weight:800; color:#facc15">👑 You are the Host / Auctioneer</div>
+          <div style="font-size:0.85rem; color:var(--text-muted)">
+            You can modify the rules above. When ready, start the auction. <strong>The server will handle everything autonomously!</strong>
+          </div>
+          <label style="display:flex; align-items:center; gap:0.5rem; margin-top:0.5rem; font-size:0.85rem; cursor:pointer">
+            <input type="checkbox" id="lobby-auto-ai-toggle" checked>
+            <span>Auto-fill any unclaimed franchise slots with AI Bidding Bots</span>
+          </label>
+        </div>
+
+        <div style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap">
+          <button class="btn-secondary-action" id="btn-save-config" onclick="saveLobbyConfig()" style="padding:0.6rem 1rem; font-size:0.85rem">
+            💾 Update Rules
+          </button>
+          <button class="btn-start-auction-host" onclick="startAuctionFromLobby()">
+            🚀 START AUCTION NOW
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Claim Counter -->
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:1rem">
+      <div style="font-size:1.15rem; font-weight:800">
+        All 10 Franchises (<span id="lobby-claimed-count" style="color:var(--accent-green)">0</span> / <span id="lobby-total-count">10</span> Claimed)
+      </div>
+      <div style="font-size:0.85rem; color:var(--text-muted)">
+        Select exactly one available franchise below to enter the auction floor.
+      </div>
+    </div>
+
+    <!-- Grid of Franchises -->
+    <div class="lobby-teams-grid" id="lobby-teams-grid">
+      <!-- Populated dynamically by JavaScript -->
+    </div>
+  </div>
+
+  <!-- ========================================================
+       SCREEN 3: LIVE AUCTION STADIUM FLOOR
+  ======================================================== -->
+  <main class="main-layout hidden" id="screen-auction">
+    <!-- Left Sidebar: All 10 Franchises (Visible to everyone) -->
+    <aside class="sidebar-left">
+      <div class="glass-panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <span>🛡️</span>
+            <span id="auction-teams-count-title">All 10 Franchises</span>
+          </div>
+          <div style="font-size:0.75rem; color:var(--text-muted)" id="sidebar-purse-cap">Cap: ₹100 Cr</div>
+        </div>
+        <div class="franchise-list" id="franchises-sidebar-list">
+          <!-- All 10 franchises populated here with purse, squad, OS count -->
+        </div>
+      </div>
+    </aside>
+
+    <!-- Center Stage: Auction Floor -->
+    <section class="auction-stage">
+      <!-- Player Podium -->
+      <div class="glass-panel player-podium">
+        <!-- Empty Podium State -->
+        <div id="podium-empty" style="grid-column: span 3; text-align:center; padding:3rem 1rem;">
+          <div style="font-size:3rem; margin-bottom:1rem">🏏</div>
+          <h2 style="font-size:1.5rem; font-weight:800; margin-bottom:0.5rem">AUCTION FLOOR IS LIVE!</h2>
+          <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:1.5rem" id="podium-empty-text">
+            Autonomous server engine is loading the first player to the podium...
+          </p>
+        </div>
+
+        <!-- Active Player Content -->
+        <div id="podium-content" class="hidden" style="display:contents">
+          <!-- Player Avatar -->
+          <div class="player-avatar-box">
+            <div class="player-avatar">
+              <span id="player-avatar-text">RG</span>
+              <div class="rating-badge" id="player-rating">92</div>
+            </div>
+            <div class="player-id-tag" id="player-id">IPL26-001</div>
+          </div>
+
+          <!-- Player Info Center -->
+          <div class="player-details">
+            <div class="player-tags" id="player-tags">
+              <span class="tag tag-role" id="player-role">Batter</span>
+              <span class="tag tag-india" id="player-nationality">Indian</span>
+            </div>
+            <h2 class="player-name" id="player-name">Ruturaj Gaikwad</h2>
+            <div class="player-subtitle">Base Price: <strong id="player-base-price" style="color:#facc15">₹2.00 Cr</strong></div>
+
+            <!-- 2026 Leaderboard Stats -->
+            <div class="stats-grid">
+              <div class="stat-box">
+                <span class="stat-label">2026 Runs</span>
+                <span class="stat-value" id="stat-runs">337</span>
+              </div>
+              <div class="stat-box">
+                <span class="stat-label">Strike Rate</span>
+                <span class="stat-value" id="stat-sr">123.4</span>
+              </div>
+              <div class="stat-box">
+                <span class="stat-label">Wickets</span>
+                <span class="stat-value" id="stat-wickets">--</span>
+              </div>
+              <div class="stat-box">
+                <span class="stat-label">Economy</span>
+                <span class="stat-value" id="stat-econ">--</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Timer & Current Bid Column -->
+          <div class="bid-column">
+            <!-- Radial Timer -->
+            <div class="timer-container">
+              <svg class="timer-svg" viewBox="0 0 100 100">
+                <circle class="timer-circle-bg" cx="50" cy="50" r="45"></circle>
+                <circle class="timer-circle-progress" id="timer-progress-circle" cx="50" cy="50" r="45"></circle>
+              </svg>
+              <div class="timer-text" id="timer-seconds">15</div>
+            </div>
+
+            <!-- Current Highest Bid -->
+            <div class="current-bid-box">
+              <div class="bid-label">Current Bid</div>
+              <div class="bid-amount" id="current-bid-amount">₹2.00 Cr</div>
+              <div id="current-bidder-info">
+                <span class="bidder-tag">Base Price</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Outcome Intermission Banner (SOLD / UNSOLD) -->
+        <div id="outcome-banner" class="outcome-banner hidden">
+          <div class="outcome-icon" id="outcome-icon">🔨</div>
+          <div class="outcome-title" id="outcome-title">SOLD!</div>
+          <div class="outcome-subtitle" id="outcome-subtitle">Player sold to CSK for ₹12.00 Cr</div>
+          <div class="outcome-timer">Next player appearing in <span id="outcome-countdown">3</span>s...</div>
+        </div>
+      </div>
+
+      <!-- Bidding Action Bar -->
+      <div class="bidding-action-bar">
+        <div class="franchise-status-info" id="user-franchise-info">
+          <!-- Populated by JS -->
+        </div>
+
+        <div class="bid-buttons-group">
+          <div id="quick-increments" style="display:flex; gap:0.5rem; flex-wrap:wrap"></div>
+          <button class="btn-primary-bid" id="btn-main-bid">
+            <span>BID ₹2.20 Cr</span>
+            <span class="btn-sub">+₹20 Lakhs</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Autonomous Status / Admin Controls -->
+      <div class="host-controls-panel" id="host-controls-panel">
+        <div class="host-tag">
+          <span>🤖</span>
+          <span>Autonomous Engine Active</span>
+        </div>
+        <div class="host-buttons" id="host-control-buttons">
+          <button class="btn-host btn-host-sec" id="btn-host-pause" onclick="togglePause()">
+            ⏸️ Pause Timer
+          </button>
+          <button class="btn-host btn-host-sec" id="btn-host-skip" onclick="skipPlayer()">
+            ⏩ Skip Player
+          </button>
+          <button class="btn-host btn-host-sec" id="btn-host-reset" onclick="resetAuction()">
+            🔄 Reset
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Summary Stats Strip -->
+      <div class="summary-stats-strip">
+        <div>Available: <strong id="stat-available-count" style="color:var(--accent-green)">250</strong></div>
+        <div>Sold: <strong id="stat-sold-count" style="color:#facc15">0</strong></div>
+        <div>Unsold: <strong id="stat-unsold-count" style="color:var(--accent-red)">0</strong></div>
+        <div>Total Spent: <strong id="stat-total-spent" style="color:var(--accent-blue)">₹0.00 Cr</strong></div>
+      </div>
+    </section>
+
+    <!-- Right Sidebar: Clean 3-Tab Panel (Prevents Overcrowding!) -->
+    <aside class="sidebar-right">
+      <div class="glass-panel" style="display:flex; flex-direction:column; height:100%">
+        <!-- Tab Headers -->
+        <div class="tab-headers">
+          <button class="tab-btn active" id="tab-btn-feed" onclick="switchRightTab('feed')">⚡ Live Feed</button>
+          <button class="tab-btn" id="tab-btn-notes" onclick="switchRightTab('notes')">📝 My Notes</button>
+          <button class="tab-btn" id="tab-btn-stats" onclick="switchRightTab('stats')">📊 Stats</button>
+        </div>
+
+        <!-- Tab 1: Live Feed -->
+        <div class="tab-content" id="tab-content-feed">
+          <div class="activity-feed" id="activity-feed">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+        <!-- Tab 2: Private Strategy Notes (TEST 16) -->
+        <div class="tab-content hidden" id="tab-content-notes">
+          <div class="strategy-notes-container">
+            <div class="notes-header">
+              <span style="font-weight:700; font-size:0.85rem">🔒 Private Strategy Notes</span>
+              <span class="notes-save-badge" id="notes-save-status">Saved</span>
+            </div>
+            <textarea id="strategy-notepad" class="strategy-textarea" placeholder="Write your private targets, budget allocations, tactics... (Auto-saved and persists on refresh)"></textarea>
+
+            <!-- Budget Reserve Calculator Helper -->
+            <div class="budget-calculator-card">
+              <div style="font-weight:700; margin-bottom:0.4rem; color:var(--accent-gold); font-size:0.8rem">
+                🧮 Budget & Reserve Calculator
+              </div>
+              <div class="calc-row">
+                <span>Remaining Purse:</span>
+                <strong id="calc-purse">₹100.00 Cr</strong>
+              </div>
+              <div class="calc-row">
+                <span>Spots to fill (Min):</span>
+                <strong id="calc-needed">18</strong>
+              </div>
+              <div class="calc-row">
+                <span>Reserve Required:</span>
+                <strong id="calc-reserve">₹3.60 Cr</strong>
+              </div>
+              <div class="calc-row highlight">
+                <span>Max Safe Bid on 1 Player:</span>
+                <strong id="calc-max-bid" style="color:var(--accent-green)">₹96.40 Cr</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 3: Auction Stats -->
+        <div class="tab-content hidden" id="tab-content-stats">
+          <div class="stats-tab-container">
+            <div style="font-weight:700; margin-bottom:0.75rem; font-size:0.9rem">Auction Progress</div>
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill" id="auction-progress-bar" style="width:0%"></div>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--text-muted); margin-top:0.3rem">
+              <span id="stat-progress-text">0 / 250 processed</span>
+              <span id="stat-progress-pct">0%</span>
+            </div>
+
+            <div style="margin-top:1.25rem; font-weight:700; font-size:0.85rem">Top Buys of the Auction</div>
+            <div class="top-buys-list" id="top-buys-list">
+              <div style="color:var(--text-muted); font-size:0.8rem; padding:0.5rem 0">No players sold yet</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Squad Details Modal (Inspect Any of the 10 Franchises) -->
+  <div class="modal-overlay hidden" id="squad-modal">
+    <div class="modal-card">
+      <div class="panel-header">
+        <div class="panel-title" id="squad-modal-title">Squad Roster</div>
+        <button class="btn-icon" onclick="closeModal('squad-modal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="squad-modal-summary"></div>
+        <div id="squad-players-table"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 250 Player Pool Modal -->
+  <div class="modal-overlay hidden" id="pool-modal">
+    <div class="modal-card" style="max-width:950px">
+      <div class="panel-header">
+        <div class="panel-title">IPL 2026 Player Pool (250 Players)</div>
+        <button class="btn-icon" onclick="closeModal('pool-modal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="display:flex; gap:1rem; margin-bottom:1rem; flex-wrap:wrap">
+          <input type="text" id="pool-search-input" placeholder="Search player name or nationality..." style="flex:1; min-width:200px; background:rgba(255,255,255,0.06); border:1px solid var(--border-color); border-radius:8px; padding:0.5rem 0.85rem; color:white">
+          <select id="pool-role-filter" style="background:rgba(255,255,255,0.06); border:1px solid var(--border-color); border-radius:8px; padding:0.5rem 0.85rem; color:white">
+            <option value="">All Roles</option>
+            <option value="Batter">Batter</option>
+            <option value="Bowler">Bowler / Spinner</option>
+            <option value="All-rounder">All-rounder</option>
+            <option value="Wicketkeeper">Wicketkeeper</option>
+          </select>
+        </div>
+
+        <div style="max-height:55vh; overflow-y:auto">
+          <table style="width:100%; border-collapse:collapse; font-size:0.85rem">
+            <thead>
+              <tr style="text-align:left; border-bottom:1px solid var(--border-color); color:var(--text-muted)">
+                <th style="padding:0.5rem">Player Name</th>
+                <th style="padding:0.5rem">Role</th>
+                <th style="padding:0.5rem">Type</th>
+                <th style="padding:0.5rem">Rating</th>
+                <th style="padding:0.5rem">Base Price</th>
+                <th style="padding:0.5rem">Status</th>
+              </tr>
+            </thead>
+            <tbody id="pool-table-body">
+              <!-- Populated by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Grand Finale / Auction Completed Modal (TEST 17) -->
+  <div class="modal-overlay hidden" id="completed-modal">
+    <div class="modal-card" style="max-width:900px">
+      <div class="panel-header">
+        <div class="panel-title">🏆 IPL 2026 AUCTION COMPLETED</div>
+        <button class="btn-icon" onclick="closeModal('completed-modal')">✕</button>
+      </div>
+      <div class="modal-body" id="completed-modal-body">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <script src="audio.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
