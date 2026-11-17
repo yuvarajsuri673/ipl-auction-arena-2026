@@ -704,8 +704,14 @@ function renderDashboard() {
   const unsoldCount = (room.players || []).filter(p => p.status === 'Unsold').length;
   const processed = soldCount + unsoldCount;
 
+  const isLobby = !room.stage || room.stage === 'lobby';
+  const dashboardFranchises = Object.entries(room.franchises || {}).filter(([code, f]) => {
+    if (isLobby) return true;
+    return f.isParticipating !== false && f.user !== null;
+  });
+
   let totalSpent = 0;
-  Object.values(room.franchises || {}).forEach(f => { totalSpent += (f.spent || 0); });
+  dashboardFranchises.forEach(([code, f]) => { totalSpent += (f.spent || 0); });
 
   const progressText = document.getElementById('kpi-progress-text');
   if (progressText) progressText.textContent = `${processed} / ${totalPool}`;
@@ -714,6 +720,12 @@ function renderDashboard() {
   if (progressBar) {
     const pct = totalPool > 0 ? (processed / totalPool) * 100 : 0;
     progressBar.style.width = `${pct}%`;
+  }
+
+  const progressSub = document.getElementById('kpi-progress-sub');
+  if (progressSub) {
+    const pct = totalPool > 0 ? ((processed / totalPool) * 100).toFixed(1) : 0;
+    progressSub.textContent = `${pct}% of pool processed`;
   }
 
   const soldEl = document.getElementById('kpi-sold-count');
@@ -730,6 +742,27 @@ function renderDashboard() {
 
   const spentEl = document.getElementById('kpi-total-spent');
   if (spentEl) spentEl.textContent = `₹${totalSpent.toFixed(2)} Cr`;
+
+  const spentSub = document.getElementById('kpi-spent-sub');
+  if (spentSub) {
+    spentSub.textContent = isLobby
+      ? 'Across 10 Franchises'
+      : `Across ${dashboardFranchises.length} Active Teams`;
+  }
+
+  const statusPill = document.getElementById('dash-room-status-pill');
+  if (statusPill) {
+    if (isLobby) {
+      statusPill.textContent = '⏳ LOBBY FORMATION';
+      statusPill.className = 'status-pill-lobby';
+    } else if (room.stage === 'completed') {
+      statusPill.textContent = '🏆 AUCTION CONCLUDED';
+      statusPill.className = 'status-pill-completed';
+    } else {
+      statusPill.textContent = '● LIVE ARENA';
+      statusPill.className = 'status-pill-live';
+    }
+  }
 
   // Spotlight Lot Card
   const spotName = document.getElementById('spotlight-player-name');
@@ -757,10 +790,23 @@ function renderDashboard() {
 
   // Leaderboard
   const grid = document.getElementById('dashboard-teams-grid');
+  const teamsHeading = document.getElementById('dashboard-teams-heading');
+  const teamsSub = document.getElementById('dashboard-teams-sub');
   if (!grid) return;
   grid.innerHTML = '';
 
-  Object.entries(room.franchises || {}).forEach(([code, f]) => {
+  if (teamsHeading) {
+    teamsHeading.textContent = isLobby
+      ? 'Franchise Purse & Squad Leaderboard (10 Teams)'
+      : `Active Competitors (${dashboardFranchises.length} Franchises Participating)`;
+  }
+  if (teamsSub) {
+    teamsSub.textContent = isLobby
+      ? 'All 10 IPL franchises available for managers to claim.'
+      : `Unclaimed franchises dropped. Tracking live bids across ${dashboardFranchises.length} participating teams.`;
+  }
+
+  dashboardFranchises.forEach(([code, f]) => {
     const osCount = (f.squad || []).filter(p => p.isOverseas).length;
     const card = document.createElement('div');
     card.className = 'team-summary-card';
@@ -926,18 +972,41 @@ async function sendChatMessage() {
 }
 
 function renderNewChatMessage(msg) {
-  const container = document.getElementById('lobby-chat-messages');
-  if (!container) return;
+  if (state.roomData) {
+    if (!state.roomData.chatMessages) state.roomData.chatMessages = [];
+    state.roomData.chatMessages.push(msg);
+  }
 
-  const div = document.createElement('div');
-  div.className = 'chat-msg-row';
-  div.innerHTML = `
-    <span class="chat-msg-user">${msg.team ? `[${msg.team}] ` : ''}${msg.user}:</span>
-    <span style="color:var(--text-main)">${msg.text}</span>
-    <span style="font-size:0.65rem; color:var(--text-dim); margin-left:0.35rem">${msg.time}</span>
-  `;
-  container.appendChild(div);
-  container.scrollTop = container.scrollHeight;
+  const container = document.getElementById('lobby-chat-messages');
+  if (container) {
+    const div = document.createElement('div');
+    div.className = 'chat-msg-row';
+    div.innerHTML = `
+      <span class="chat-msg-user">${msg.team ? `[${msg.team}] ` : ''}${msg.user}:</span>
+      <span style="color:var(--text-main)">${escapeHtml(msg.text || '')}</span>
+      <span style="font-size:0.65rem; color:var(--text-dim); margin-left:0.35rem">${msg.time || ''}</span>
+    `;
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+  }
+
+  const liveContainer = document.getElementById('live-chat-messages');
+  if (liveContainer) {
+    const item = document.createElement('div');
+    item.className = 'chat-bubble-item';
+    const isMe = (msg.userName || msg.user) === state.userName;
+    const author = msg.userName || msg.user || 'Participant';
+    const teamCode = msg.franchiseCode || msg.team;
+    item.innerHTML = `
+      <div style="font-size:0.7rem; font-weight:700; color:${isMe ? 'var(--accent-orange)' : 'var(--text-muted)'}">
+        ${teamCode ? `[${teamCode}] ` : ''}${author}
+        <span style="font-size:0.62rem; color:var(--text-dim); margin-left:0.3rem">${msg.time || ''}</span>
+      </div>
+      <div style="font-size:0.8rem; margin-top:0.15rem; color:var(--text-main)">${escapeHtml(msg.text || '')}</div>
+    `;
+    liveContainer.appendChild(item);
+    liveContainer.scrollTop = liveContainer.scrollHeight;
+  }
 }
 
 // Active Podium (Center Column)
@@ -1058,11 +1127,14 @@ function checkBidEligibility(room, nextBid) {
   if (!state.userFranchise || !room.franchises[state.userFranchise]) {
     return { canBid: false, reason: 'Select a franchise to enable bidding.' };
   }
+  const f = room.franchises[state.userFranchise];
+  if (f.isParticipating === false) {
+    return { canBid: false, reason: 'This franchise was dropped and is not participating in the auction.' };
+  }
   if (room.auction.currentBidder === state.userFranchise) {
     return { canBid: false, reason: 'You currently hold the highest bid!' };
   }
 
-  const f = room.franchises[state.userFranchise];
   const player = room.auction.currentPlayer;
 
   if ((f.squad || []).length >= (room.config.maxSquad || 25)) {
@@ -1121,6 +1193,14 @@ async function sendBid(amount) {
   }
 }
 
+async function placeQuickRaise(extraAmount) {
+  const room = state.roomData;
+  if (!room || !room.auction || !state.userFranchise) return;
+  const currentBid = room.auction.currentBid || (room.auction.currentPlayer ? room.auction.currentPlayer.basePrice : 2.0);
+  const targetBid = Number((currentBid + extraAmount).toFixed(2));
+  await sendBid(targetBid);
+}
+
 function updateTimerDisplay(timer) {
   const secondsEl = document.getElementById('timer-seconds');
   if (secondsEl) {
@@ -1138,13 +1218,33 @@ function updateTimerDisplay(timer) {
   }
 }
 
-// Left Column Teams List
+// Left Column Teams List (Only Participating Teams Shown During Live Auction)
 function renderLeftTeamsPanel(room) {
   const container = document.getElementById('bidding-teams-list');
+  const countBadge = document.getElementById('bidding-teams-count');
   if (!container) return;
   container.innerHTML = '';
 
-  Object.entries(room.franchises || {}).forEach(([code, f]) => {
+  const participating = Object.entries(room.franchises || {}).filter(([code, f]) => {
+    if (room.stage === 'lobby') return true;
+    return f.isParticipating !== false && f.user !== null;
+  });
+
+  if (countBadge) {
+    countBadge.textContent = `${participating.length} Teams Active`;
+  }
+
+  const mobTabTeams = document.getElementById('mob-tab-teams');
+  if (mobTabTeams) {
+    mobTabTeams.innerHTML = `🛡️ Teams (${participating.length})`;
+  }
+
+  if (participating.length === 0) {
+    container.innerHTML = `<div style="text-align:center; padding:1.5rem; color:var(--text-dim); font-size:0.75rem">No active participating teams.</div>`;
+    return;
+  }
+
+  participating.forEach(([code, f]) => {
     const isMine = f.user === state.userName;
     const isLeader = room.auction && room.auction.currentBidder === code;
 
@@ -1155,8 +1255,8 @@ function renderLeftTeamsPanel(room) {
       <div class="compact-team-name-col">
         <div class="compact-circle-tag" style="background:${f.color}; color:${f.textColor}">${f.shortName}</div>
         <div style="min-width:0">
-          <div style="font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">${f.shortName}</div>
-          <div style="font-size:0.65rem; color:var(--text-dim)">${f.user ? f.user : 'Available'} · ${(f.squad || []).length}/25</div>
+          <div style="font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">${f.shortName} · ${f.name}</div>
+          <div style="font-size:0.65rem; color:var(--text-dim)">${f.user ? `👤 ${f.user}` : 'Available'} · ${(f.squad || []).length}/${room.config?.maxSquad || 25} (✈️${(f.squad || []).filter(p => p.isOverseas).length}/${room.config?.maxOverseas || 8})</div>
         </div>
       </div>
       <div class="compact-purse-val">₹${(f.purse || 0).toFixed(2)} Cr</div>
@@ -1191,6 +1291,80 @@ function renderActivityFeed(room) {
     `;
     feed.appendChild(div);
   });
+}
+
+function switchActivityColTab(tab) {
+  const gavelBtn = document.getElementById('act-tab-gavel');
+  const chatBtn = document.getElementById('act-tab-chat');
+  const gavelScroll = document.getElementById('activity-feed');
+  const chatContainer = document.getElementById('activity-chat-container');
+
+  if (tab === 'gavel') {
+    if (gavelBtn) gavelBtn.classList.add('active');
+    if (chatBtn) chatBtn.classList.remove('active');
+    if (gavelScroll) gavelScroll.classList.remove('hidden');
+    if (chatContainer) chatContainer.classList.add('hidden');
+  } else {
+    if (gavelBtn) gavelBtn.classList.remove('active');
+    if (chatBtn) chatBtn.classList.add('active');
+    if (gavelScroll) gavelScroll.classList.add('hidden');
+    if (chatContainer) chatContainer.classList.remove('hidden');
+    renderLiveChatMessages();
+  }
+}
+
+function renderLiveChatMessages() {
+  const container = document.getElementById('live-chat-messages');
+  if (!container || !state.roomData) return;
+  const messages = state.roomData.chatMessages || [];
+  if (messages.length === 0) {
+    container.innerHTML = `<div style="text-align:center; padding:1.5rem; color:var(--text-dim); font-size:0.75rem">No messages yet. Say hello!</div>`;
+    return;
+  }
+  container.innerHTML = '';
+  messages.forEach(msg => {
+    const item = document.createElement('div');
+    item.className = 'chat-bubble-item';
+    const isMe = (msg.userName || msg.user) === state.userName;
+    const author = msg.userName || msg.user || 'Participant';
+    const teamCode = msg.franchiseCode || msg.team;
+    item.innerHTML = `
+      <div style="font-size:0.7rem; font-weight:700; color:${isMe ? 'var(--accent-orange)' : 'var(--text-muted)'}">
+        ${teamCode ? `[${teamCode}] ` : ''}${author}
+        <span style="font-size:0.62rem; color:var(--text-dim); margin-left:0.3rem">${msg.time || ''}</span>
+      </div>
+      <div style="font-size:0.8rem; margin-top:0.15rem; color:var(--text-main)">${escapeHtml(msg.text || '')}</div>
+    `;
+    container.appendChild(item);
+  });
+  container.scrollTop = container.scrollHeight;
+}
+
+async function sendLiveChatMessage() {
+  const input = document.getElementById('live-chat-input');
+  if (!input || !input.value.trim() || !state.roomId) return;
+  const text = input.value.trim();
+  input.value = '';
+
+  try {
+    await fetch('/api/room/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        roomId: state.roomId,
+        userName: state.userName,
+        franchiseCode: state.userFranchise,
+        text: text
+      })
+    });
+  } catch (e) {
+    console.error('Chat error:', e);
+  }
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 function switchMobileBiddingView(view) {
@@ -1229,7 +1403,12 @@ function renderTeamsPage() {
   if (!grid) return;
   grid.innerHTML = '';
 
-  Object.entries(room.franchises || {}).forEach(([code, f]) => {
+  const list = Object.entries(room.franchises || {}).filter(([code, f]) => {
+    if (room.stage === 'lobby') return true;
+    return f.isParticipating !== false && f.user !== null;
+  });
+
+  list.forEach(([code, f]) => {
     const osCount = (f.squad || []).filter(p => p.isOverseas).length;
     const maxSquad = room.config.maxSquad || 25;
     const maxOverseas = room.config.maxOverseas || 8;
@@ -1603,12 +1782,12 @@ function promptStartAuction() {
   const claimed = Object.values(state.roomData.franchises || {}).filter(f => f.user !== null).length;
   showAdminConfirmModal(
     'Start Auction Confirmation',
-    `You are about to start the live autonomous auction.<br><br>
-     • <strong>Claimed Managers:</strong> ${claimed} / 10<br>
+    `You are about to start the live IPL auction.<br><br>
+     • <strong>Participating Franchises:</strong> ${claimed} Teams<br>
      • <strong>Starting Purse:</strong> ₹${(state.roomData.config.initialPurse || 120).toFixed(2)} Cr<br>
      • <strong>Squad Size:</strong> ${state.roomData.config.minSquad} Min — ${state.roomData.config.maxSquad} Max<br>
      • <strong>Timer:</strong> ${state.roomData.config.timerDuration}s per lot<br><br>
-     All unclaimed teams remain Available. Only human managers can bid.`,
+     <em>Note: Any unclaimed franchises will drop and will not participate. Only the ${claimed} claimed teams will be on the bidding floor.</em>`,
     () => hostAction('start')
   );
 }

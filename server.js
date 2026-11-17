@@ -143,9 +143,9 @@ function canFranchiseBid(room, franchiseCode, bidAmount) {
   const p = room.auction.currentPlayer;
   if (!f || !p) return { canBid: false, reason: 'No player on auction podium' };
 
-  // Only real human managers who claimed a franchise can bid
-  if (!f.user) {
-    return { canBid: false, reason: 'This franchise has no manager. Only claimed franchises can bid.' };
+  // Only real human managers who claimed a participating franchise can bid
+  if (!f.user || f.isParticipating === false) {
+    return { canBid: false, reason: 'This franchise has no manager or is not participating in the auction.' };
   }
 
   if (f.squad.length >= room.config.maxSquad) {
@@ -246,14 +246,28 @@ function startAuctionFromLobby(room) {
   clearRoomTimers(room);
   room.stage = 'active';
 
+  // Only claimed teams participate in active bidding; unclaimed teams are dropped
+  const claimedFranchises = Object.values(room.franchises).filter(f => f.user !== null);
+  for (const [code, f] of Object.entries(room.franchises)) {
+    if (claimedFranchises.length > 0) {
+      f.isParticipating = (f.user !== null);
+    } else {
+      f.isParticipating = true;
+    }
+  }
+
+  const participatingCount = claimedFranchises.length > 0 ? claimedFranchises.length : Object.keys(room.franchises).length;
   const logEntry = {
     id: Date.now(),
-    text: `🚀 Auctioneer ${room.hostName} clicked START AUCTION! All 10 franchises ready.`,
+    text: `🚀 Auctioneer ${room.hostName} clicked START AUCTION! ${participatingCount} participating franchises active.`,
     time: new Date().toLocaleTimeString()
   };
   room.activityLog.push(logEntry);
 
-  broadcast(room, 'auction_started', { message: 'The auction has begun! Automation active.' });
+  broadcast(room, 'auction_started', {
+    message: `The auction has begun with ${participatingCount} participating teams!`,
+    participatingCount
+  });
   broadcastState(room);
 
   // Automatically call the first player immediately
@@ -291,9 +305,9 @@ function advanceToNextPlayer(room) {
     return;
   }
 
-  // Check if all claimed franchises have full squads
-  const claimedFranchises = Object.values(room.franchises).filter(f => f.user !== null);
-  if (claimedFranchises.length > 0 && claimedFranchises.every(f => f.squad.length >= room.config.maxSquad)) {
+  // Check if all active participating franchises have full squads
+  const participatingFranchises = Object.values(room.franchises).filter(f => f.isParticipating !== false && f.user !== null);
+  if (participatingFranchises.length > 0 && participatingFranchises.every(f => f.squad.length >= room.config.maxSquad)) {
     completeAuction(room);
     return;
   }

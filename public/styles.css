@@ -393,36 +393,6 @@ input, select, textarea {
   border-radius: 3px;
 }
 
-/* Sport Pill Selector (Cricket / Football) */
-.sport-selector-deck {
-  display: flex;
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  padding: 0.25rem;
-  margin-bottom: 1.25rem;
-}
-
-.sport-pill-btn {
-  flex: 1;
-  padding: 0.65rem;
-  border-radius: 10px;
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: var(--text-muted);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  transition: all 0.15s;
-}
-
-.sport-pill-btn.active {
-  background: var(--accent-orange);
-  color: #ffffff;
-  box-shadow: 0 2px 10px var(--accent-orange-glow);
-}
-
 /* Landing Main Card */
 .landing-card-surface {
   background: var(--bg-card);
@@ -1015,37 +985,137 @@ input, select, textarea {
 }
 
 /* ========================================================
-   PAGE 1: DASHBOARD
+   PAGE 1: DASHBOARD (JUSTIFIED & BALANCED)
 ======================================================== */
+.dashboard-centered-wrap {
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 1.25rem;
+  padding: 0.5rem 0 2rem;
+}
+
+@media (min-height: 800px) and (min-width: 1024px) {
+  .dashboard-centered-wrap {
+    min-height: calc(100vh - 160px);
+    justify-content: space-evenly;
+  }
+}
+
+.page-badge {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--accent-orange);
+  background: rgba(255, 107, 0, 0.12);
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-pill);
+  margin-bottom: 0.35rem;
+}
+
+.status-pill-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--radius-pill);
+}
+
+.status-pill-lobby {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--radius-pill);
+}
+
+.status-pill-completed {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  background: rgba(168, 85, 247, 0.15);
+  color: #a855f7;
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--radius-pill);
+}
+
 .stats-kpi-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 0.75rem;
-  margin-bottom: 1.25rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.85rem;
+  margin-bottom: 0.25rem;
 }
 
 .kpi-card {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
-  padding: 1rem;
+  padding: 1.15rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  transition: transform 0.15s, border-color 0.15s;
+}
+
+.kpi-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 107, 0, 0.3);
+}
+
+.kpi-card-inner {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.kpi-icon-pill {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+  flex-shrink: 0;
 }
 
 .kpi-label {
   font-size: 0.75rem;
   color: var(--text-muted);
   font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .kpi-value {
-  font-size: 1.5rem;
+  font-size: 1.6rem;
   font-weight: 900;
   font-family: var(--font-display);
   margin: 0.25rem 0;
+  letter-spacing: -0.5px;
 }
 
 .kpi-sub {
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   color: var(--text-dim);
 }
 
@@ -1064,16 +1134,17 @@ input, select, textarea {
 }
 
 .dashboard-spotlight-card {
-  background: linear-gradient(135deg, var(--bg-card) 0%, rgba(255, 107, 0, 0.08) 100%);
-  border: 1px solid var(--border-color);
+  background: linear-gradient(135deg, rgba(22, 23, 30, 0.95) 0%, rgba(35, 36, 48, 0.85) 100%);
+  border: 1px solid rgba(255, 107, 0, 0.25);
   border-radius: var(--radius-lg);
-  padding: 1.25rem;
+  padding: 1.35rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 1.5rem;
-  gap: 1rem;
+  margin-bottom: 0.5rem;
+  gap: 1.25rem;
   flex-wrap: wrap;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2);
 }
 
 .spotlight-badge {
@@ -1088,7 +1159,7 @@ input, select, textarea {
 }
 
 .spotlight-player-name {
-  font-size: 1.4rem;
+  font-size: 1.45rem;
   font-weight: 800;
   letter-spacing: -0.3px;
 }
@@ -1113,19 +1184,41 @@ input, select, textarea {
   font-size: 0.72rem;
   color: var(--text-muted);
   display: block;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .spotlight-price-val {
-  font-size: 1.35rem;
+  font-size: 1.45rem;
   font-weight: 900;
   font-family: var(--font-display);
   color: var(--accent-gold);
 }
 
+.dashboard-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0.5rem;
+  margin-bottom: -0.25rem;
+}
+
+.dashboard-section-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+}
+
+.dashboard-section-sub {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.15rem;
+}
+
 .dashboard-teams-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 0.85rem;
 }
 
 .team-summary-card {
@@ -1479,6 +1572,44 @@ input, select, textarea {
   margin-top: 0.15rem;
 }
 
+/* Quick Jump Bid Chips */
+.quick-bid-chips-row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.quick-bid-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-right: 0.2rem;
+}
+
+.quick-bid-chip {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  color: var(--accent-gold);
+  font-size: 0.8rem;
+  font-weight: 800;
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.quick-bid-chip:hover {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: var(--accent-gold);
+  transform: translateY(-1px);
+}
+
+.quick-bid-chip:active {
+  transform: scale(0.96);
+}
+
 /* Large Place Bid Primary Action */
 .bid-action-box {
   display: flex;
@@ -1537,7 +1668,7 @@ input, select, textarea {
   text-align: center;
 }
 
-/* Column 3: Right Auction Activity Feed */
+/* Column 3: Right Auction Activity Feed & Live Chat */
 .bidding-col-activity {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
@@ -1546,6 +1677,53 @@ input, select, textarea {
   max-height: 640px;
   display: flex;
   flex-direction: column;
+}
+
+.activity-tabs-header {
+  display: flex;
+  background: var(--bg-primary);
+  border-radius: var(--radius-pill);
+  padding: 0.2rem;
+  margin-bottom: 0.75rem;
+  border: 1px solid var(--border-color);
+  gap: 0.2rem;
+}
+
+.activity-tab-btn {
+  flex: 1;
+  padding: 0.45rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s;
+}
+
+.activity-tab-btn.active {
+  background: var(--accent-orange);
+  color: #fff;
+  font-weight: 800;
+  box-shadow: 0 2px 8px var(--accent-orange-glow);
+}
+
+.activity-chat-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 380px;
+  max-height: 520px;
+}
+
+.chat-bubble-item {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 0.5rem 0.65rem;
+  margin-bottom: 0.4rem;
 }
 
 .activity-feed-scroll {

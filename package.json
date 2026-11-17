@@ -5,7 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node test/acceptance_test.js && node test/http_integration_test.js",
+    "test": "node test/acceptance_test.js && node test/dynamic_participating_teams_test.js && node test/http_integration_test.js",
     "build-data": "node data/build_data.js"
   },
   "keywords": [

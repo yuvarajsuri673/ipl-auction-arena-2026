@@ -133,12 +133,6 @@
       </div>
     </div>
 
-    <!-- Sport Pill Selector (Cricket / Football) -->
-    <div class="sport-selector-deck">
-      <button class="sport-pill-btn active" id="sport-tab-cricket">🏏 Cricket</button>
-      <button class="sport-pill-btn" id="sport-tab-football" onclick="alert('Football Auction coming soon!')">⚽ Football</button>
-    </div>
-
     <!-- Main Creation / Join Card -->
     <div class="landing-card-surface">
       <div class="form-group" style="margin-bottom:1rem">
@@ -180,66 +174,100 @@
          PAGE 1: AUCTION DASHBOARD
     ======================================================== -->
     <section class="page-view" id="page-dashboard">
-      <div class="page-header">
-        <div>
-          <h2 class="page-title">Auction Dashboard</h2>
-          <p class="page-subtitle">Tournament progress, live lot spotlight, and franchise capital overview.</p>
-        </div>
-        <div class="page-header-actions">
-          <button class="btn-cta-secondary" onclick="copyInviteLink()" style="margin-top:0; padding:0.5rem 1rem">
-            🔗 Copy Invite Link
-          </button>
-        </div>
-      </div>
-
-      <!-- Quick KPI Stats -->
-      <div class="stats-kpi-grid">
-        <div class="kpi-card">
-          <div class="kpi-label">Auction Progress</div>
-          <div class="kpi-value" id="kpi-progress-text">0 / 250</div>
-          <div class="progress-bar-bg" style="margin-top:0.4rem">
-            <div class="progress-bar-fill" id="kpi-progress-bar" style="width:0%"></div>
+      <div class="dashboard-centered-wrap">
+        <!-- Dashboard Header -->
+        <div class="page-header">
+          <div>
+            <div class="page-badge">AUCTION CONTROL DESK</div>
+            <h2 class="page-title">Tournament Dashboard</h2>
+            <p class="page-subtitle">Real-time purse utilization, lot spotlights, and squad compliance.</p>
+          </div>
+          <div class="page-header-actions">
+            <span class="status-pill-live" id="dash-room-status-pill">● LIVE ARENA</span>
+            <button class="btn-cta-secondary" onclick="copyInviteLink()" style="margin-top:0; padding:0.55rem 1rem">
+              🔗 Copy Invite Link
+            </button>
           </div>
         </div>
-        <div class="kpi-card">
-          <div class="kpi-label">Players Sold</div>
-          <div class="kpi-value" id="kpi-sold-count" style="color:var(--accent-green)">0</div>
-          <div class="kpi-sub" id="kpi-sold-sub">0% of pool</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-label">Players Unsold</div>
-          <div class="kpi-value" id="kpi-unsold-count" style="color:var(--accent-red)">0</div>
-          <div class="kpi-sub">Available for re-auction</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-label">Total Spent</div>
-          <div class="kpi-value" id="kpi-total-spent" style="color:var(--accent-gold)">₹0.00 Cr</div>
-          <div class="kpi-sub">Across 10 Franchises</div>
-        </div>
-      </div>
 
-      <!-- Active Spotlight Card -->
-      <div class="dashboard-spotlight-card" id="dashboard-spotlight">
-        <div class="spotlight-left">
-          <div class="spotlight-badge" id="spotlight-status-badge">AUCTION FLOOR</div>
-          <h3 class="spotlight-player-name" id="spotlight-player-name">Waiting for auction to begin...</h3>
-          <div class="spotlight-details" id="spotlight-player-details">Select your franchise and enter the live bidding floor.</div>
-        </div>
-        <div class="spotlight-right">
-          <div class="spotlight-price-box">
-            <span class="spotlight-price-label">Current Bid</span>
-            <span class="spotlight-price-val" id="spotlight-price">₹0.00 Cr</span>
+        <!-- Quick KPI Stats (4 Cards) -->
+        <div class="stats-kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-card-inner">
+              <div>
+                <div class="kpi-label">Auction Progress</div>
+                <div class="kpi-value" id="kpi-progress-text">0 / 250</div>
+                <div class="kpi-sub" id="kpi-progress-sub">0% of pool processed</div>
+              </div>
+              <div class="kpi-icon-pill" style="background:rgba(56,189,248,0.15); color:#38bdf8">📊</div>
+            </div>
+            <div class="progress-bar-bg" style="margin-top:0.75rem">
+              <div class="progress-bar-fill" id="kpi-progress-bar" style="width:0%"></div>
+            </div>
           </div>
-          <button class="btn-cta-orange" onclick="navigateTo('bidding')" style="width:auto; padding:0.65rem 1.25rem; font-size:0.9rem">
-            <span>Enter Live Auction →</span>
-          </button>
-        </div>
-      </div>
 
-      <!-- 10 Franchises Leaderboard Grid -->
-      <h3 style="font-size:1rem; font-weight:800; margin-bottom:0.75rem">Franchise Purse & Squad Leaderboard</h3>
-      <div class="dashboard-teams-grid" id="dashboard-teams-grid">
-        <!-- Populated dynamically -->
+          <div class="kpi-card">
+            <div class="kpi-card-inner">
+              <div>
+                <div class="kpi-label">Players Sold</div>
+                <div class="kpi-value" id="kpi-sold-count" style="color:var(--accent-green)">0</div>
+                <div class="kpi-sub" id="kpi-sold-sub">0% of pool</div>
+              </div>
+              <div class="kpi-icon-pill" style="background:rgba(34,197,94,0.15); color:#22c55e">🔨</div>
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-card-inner">
+              <div>
+                <div class="kpi-label">Players Unsold</div>
+                <div class="kpi-value" id="kpi-unsold-count" style="color:var(--accent-red)">0</div>
+                <div class="kpi-sub" id="kpi-unsold-sub">Available for re-auction</div>
+              </div>
+              <div class="kpi-icon-pill" style="background:rgba(239,68,68,0.15); color:#ef4444">❌</div>
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-card-inner">
+              <div>
+                <div class="kpi-label">Purse Invested</div>
+                <div class="kpi-value" id="kpi-total-spent" style="color:var(--accent-gold)">₹0.00 Cr</div>
+                <div class="kpi-sub" id="kpi-spent-sub">Across Active Franchises</div>
+              </div>
+              <div class="kpi-icon-pill" style="background:rgba(245,158,11,0.15); color:#f59e0b">💰</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Active Spotlight Card -->
+        <div class="dashboard-spotlight-card" id="dashboard-spotlight">
+          <div class="spotlight-left">
+            <div class="spotlight-badge" id="spotlight-status-badge">AUCTION FLOOR</div>
+            <h3 class="spotlight-player-name" id="spotlight-player-name">Waiting for auction to begin...</h3>
+            <div class="spotlight-details" id="spotlight-player-details">Select your franchise and enter the live bidding floor.</div>
+          </div>
+          <div class="spotlight-right">
+            <div class="spotlight-price-box">
+              <span class="spotlight-price-label">Current Bid</span>
+              <span class="spotlight-price-val" id="spotlight-price">₹0.00 Cr</span>
+            </div>
+            <button class="btn-cta-orange" onclick="navigateTo('bidding')" style="width:auto; padding:0.75rem 1.4rem; font-size:0.95rem">
+              <span>Enter Live Auction →</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Franchises Leaderboard Grid -->
+        <div class="dashboard-section-header">
+          <div>
+            <h3 class="dashboard-section-title" id="dashboard-teams-heading">Franchise Purse & Squad Leaderboard</h3>
+            <p class="dashboard-section-sub" id="dashboard-teams-sub">Real-time purse remaining and squad quota compliance.</p>
+          </div>
+        </div>
+        <div class="dashboard-teams-grid" id="dashboard-teams-grid">
+          <!-- Populated dynamically -->
+        </div>
       </div>
     </section>
 
@@ -461,6 +489,15 @@
                 </div>
               </div>
 
+              <!-- Quick Jump Bid Chips -->
+              <div class="quick-bid-chips-row">
+                <span class="quick-bid-label">Quick Raise:</span>
+                <button class="quick-bid-chip" onclick="placeQuickRaise(0.25)">+25L</button>
+                <button class="quick-bid-chip" onclick="placeQuickRaise(0.50)">+50L</button>
+                <button class="quick-bid-chip" onclick="placeQuickRaise(1.00)">+1.00 Cr</button>
+                <button class="quick-bid-chip" onclick="placeQuickRaise(2.00)">+2.00 Cr</button>
+              </div>
+
               <!-- Primary Single Large Bid Button -->
               <div class="bid-action-box">
                 <button class="btn-large-bid" id="btn-place-bid">
@@ -472,14 +509,23 @@
             </div>
           </main>
 
-          <!-- Column 3: Right Auction Activity Feed -->
+          <!-- Column 3: Right Auction Activity Feed & Chat -->
           <aside class="bidding-col-activity" id="bidding-col-activity">
-            <div class="col-panel-title">
-              <span>⚡ Live Gavel & Bids</span>
-              <span class="tag tag-india">● Synchronized</span>
+            <div class="activity-tabs-header">
+              <button class="activity-tab-btn active" id="act-tab-gavel" onclick="switchActivityColTab('gavel')">⚡ Live Gavel</button>
+              <button class="activity-tab-btn" id="act-tab-chat" onclick="switchActivityColTab('chat')">💬 Floor Chat</button>
             </div>
             <div class="activity-feed-scroll" id="activity-feed">
               <!-- Populated by JS -->
+            </div>
+            <div class="activity-chat-container hidden" id="activity-chat-container">
+              <div class="chat-messages-container" id="live-chat-messages">
+                <!-- Live messages -->
+              </div>
+              <div class="chat-input-row" style="margin-top:auto; padding-top:0.5rem">
+                <input type="text" id="live-chat-input" class="chat-input-field" placeholder="Chat with managers..." onkeydown="if(event.key==='Enter') sendLiveChatMessage()">
+                <button class="btn-chat-send" onclick="sendLiveChatMessage()">➤</button>
+              </div>
             </div>
           </aside>
         </div>
