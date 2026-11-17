@@ -93,13 +93,12 @@ async function runAcceptanceTests() {
   logPass(4, 'Admin configures purse, squad size, overseas limit, increments, and timer.');
 
   // TEST 5: Admin starts the auction.
-  room.config.autoAiForUnclaimed = true;
   startAuctionFromLobby(room);
   assert.strictEqual(room.stage, 'active', 'Room stage must be active');
-  // Unclaimed teams should be assigned to AI bots
-  assert.strictEqual(room.franchises['KKR'].isAi, true, 'Unclaimed team KKR assigned to AI');
-  assert.strictEqual(room.franchises['MI'].isAi, false, 'Human claimed team MI is not AI');
-  logPass(5, 'Admin starts the auction, transitioning room to active with AI bots handling unclaimed slots.');
+  // Unclaimed teams strictly remain unclaimed and human-only (NO AI bots)
+  assert.strictEqual(room.franchises['KKR'].user, null, 'Unclaimed team KKR remains unclaimed with no bot');
+  assert.strictEqual(room.franchises['MI'].user, 'Participant_Rohit', 'Human claimed team MI is preserved');
+  logPass(5, 'Admin starts the auction, transitioning room to active with human-only participants.');
 
   // TEST 6: The first player appears automatically and bidding starts.
   // Advance to next player

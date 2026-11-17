@@ -83,23 +83,23 @@ function createRoom(roomId, options = {}) {
       maxSquad: options.maxSquad !== undefined ? Number(options.maxSquad) : 25,
       maxOverseas: options.maxOverseas !== undefined ? Number(options.maxOverseas) : 8,
       minReservePrice: options.minReservePrice !== undefined ? Number(options.minReservePrice) : 0.75,
-      timerDuration: options.timerDuration !== undefined ? Number(options.timerDuration) : 15,
+      timerDuration: options.timerDuration !== undefined ? Number(options.timerDuration) : 20,
       bidIncrementRule: options.bidIncrementRule || 'standard',
-      autoAiForUnclaimed: options.autoAiForUnclaimed !== false
+      unsoldRound: Boolean(options.unsoldRound)
     },
     players: players,
     franchises: franchises,
     auctionHistory: [],
+    chatMessages: [],
     auction: {
-      status: 'idle', // idle, bidding, going_once, going_twice, sold, unsold, paused, completed
+      status: 'idle', // idle, bidding, going_once, going_twice, sold, unsold, paused, stopped, completed
       currentPlayerIndex: -1,
       currentPlayer: null,
       currentBid: 0,
       currentBidder: null,
       bidHistory: [],
-      timer: options.timerDuration !== undefined ? Number(options.timerDuration) : 15,
+      timer: options.timerDuration !== undefined ? Number(options.timerDuration) : 20,
       timerInterval: null,
-      aiTimeout: null,
       transitionTimeout: null,
       isPaused: false
     },
@@ -137,11 +137,16 @@ function getMaxAllowedBid(room, franchiseCode) {
   return Math.max(0, Number((f.purse - reserveRequired).toFixed(2)));
 }
 
-// Eligibility check
+// Eligibility check - Strict Human Participants Only
 function canFranchiseBid(room, franchiseCode, bidAmount) {
   const f = room.franchises[franchiseCode];
   const p = room.auction.currentPlayer;
   if (!f || !p) return { canBid: false, reason: 'No player on auction podium' };
+
+  // Only real human managers who claimed a franchise can bid
+  if (!f.user) {
+    return { canBid: false, reason: 'This franchise has no manager. Only claimed franchises can bid.' };
+  }
 
   if (f.squad.length >= room.config.maxSquad) {
     return { canBid: false, reason: `Squad limit reached (${room.config.maxSquad} players max)` };
@@ -219,6 +224,7 @@ function getSanitizedRoomState(room) {
       nextIncrement: getNextBidIncrement(room.auction.currentBid)
     },
     activityLog: room.activityLog.slice(-50),
+    chatMessages: (room.chatMessages || []).slice(-50),
     auctionHistory: (room.auctionHistory || []).slice(0, 100)
   };
 }
@@ -228,10 +234,6 @@ function clearRoomTimers(room) {
   if (room.auction.timerInterval) {
     clearInterval(room.auction.timerInterval);
     room.auction.timerInterval = null;
-  }
-  if (room.auction.aiTimeout) {
-    clearTimeout(room.auction.aiTimeout);
-    room.auction.aiTimeout = null;
   }
   if (room.auction.transitionTimeout) {
     clearTimeout(room.auction.transitionTimeout);
@@ -244,18 +246,9 @@ function startAuctionFromLobby(room) {
   clearRoomTimers(room);
   room.stage = 'active';
 
-  // For any unclaimed teams, if autoAi is enabled, enable AI
-  if (room.config.autoAiForUnclaimed) {
-    for (const f of Object.values(room.franchises)) {
-      if (!f.user) {
-        f.isAi = true;
-      }
-    }
-  }
-
   const logEntry = {
     id: Date.now(),
-    text: `🚀 Auctioneer ${room.hostName} clicked START AUCTION! The automated auction engine has taken full control.`,
+    text: `🚀 Auctioneer ${room.hostName} clicked START AUCTION! All 10 franchises ready.`,
     time: new Date().toLocaleTimeString()
   };
   room.activityLog.push(logEntry);
@@ -275,17 +268,32 @@ function startAuctionFromLobby(room) {
 function advanceToNextPlayer(room) {
   clearRoomTimers(room);
 
-  // Check if auction is completed
+  // Check if auction is completed or unsold round can be triggered
   const available = room.players.filter(p => p.status === 'Available');
   if (available.length === 0) {
+    if (room.config.unsoldRound && !room.unsoldRoundDone) {
+      const unsolds = room.players.filter(p => p.status === 'Unsold');
+      if (unsolds.length > 0) {
+        room.unsoldRoundDone = true;
+        unsolds.forEach(p => { p.status = 'Available'; });
+        const logEntry = {
+          id: Date.now(),
+          text: `🔄 Final Unsold Round Started! ${unsolds.length} unsold players returned to the auction pool.`,
+          time: new Date().toLocaleTimeString()
+        };
+        room.activityLog.push(logEntry);
+        broadcast(room, 'unsold_round_started', { count: unsolds.length });
+        advanceToNextPlayer(room);
+        return;
+      }
+    }
     completeAuction(room);
     return;
   }
 
-  // Check if all franchises have full squads
-  const activeFranchises = Object.values(room.franchises);
-  const allSquadsFull = activeFranchises.every(f => f.squad.length >= room.config.maxSquad);
-  if (allSquadsFull) {
+  // Check if all claimed franchises have full squads
+  const claimedFranchises = Object.values(room.franchises).filter(f => f.user !== null);
+  if (claimedFranchises.length > 0 && claimedFranchises.every(f => f.squad.length >= room.config.maxSquad)) {
     completeAuction(room);
     return;
   }
@@ -315,7 +323,6 @@ function advanceToNextPlayer(room) {
 
   // Start independent countdown clock on server
   runBiddingTimer(room);
-  triggerAiBidding(room);
 }
 
 // Run the server-side countdown clock
@@ -545,85 +552,7 @@ function placeBid(room, franchiseCode, customAmount = null) {
   });
 
   broadcastState(room);
-  triggerAiBidding(room);
   return { success: true, amount: nextAmount };
-}
-
-// AI Bidding Engine
-function triggerAiBidding(room) {
-  if (room.auction.aiTimeout) {
-    clearTimeout(room.auction.aiTimeout);
-    room.auction.aiTimeout = null;
-  }
-
-  if (room.auction.status !== 'bidding' && room.auction.status !== 'going_once' && room.auction.status !== 'going_twice') {
-    return;
-  }
-
-  const player = room.auction.currentPlayer;
-  if (!player) return;
-
-  const eligibleAiFranchises = [];
-
-  for (const [code, f] of Object.entries(room.franchises)) {
-    if (!f.isAi || room.auction.currentBidder === code) continue;
-    if (f.squad.length >= room.config.maxSquad) continue;
-
-    if (player.isOverseas) {
-      const overseasCount = f.squad.filter(p => p.isOverseas).length;
-      if (overseasCount >= room.config.maxOverseas) continue;
-    }
-
-    const nextIncrement = getNextBidIncrement(room.auction.currentBid);
-    const nextBid = Number((room.auction.currentBid + nextIncrement).toFixed(2));
-    const maxAllowed = getMaxAllowedBid(room, code);
-    if (nextBid > maxAllowed) continue;
-
-    const valuation = calculateAiValuation(room, f, player);
-    if (nextBid <= valuation) {
-      eligibleAiFranchises.push({ code, f, maxWilling: valuation });
-    }
-  }
-
-  if (eligibleAiFranchises.length === 0) return;
-
-  const bidder = eligibleAiFranchises[Math.floor(Math.random() * eligibleAiFranchises.length)];
-  const delayMs = Math.floor(1400 + Math.random() * 2000);
-
-  room.auction.aiTimeout = setTimeout(() => {
-    if (room.auction.status === 'bidding' || room.auction.status === 'going_once' || room.auction.status === 'going_twice') {
-      placeBid(room, bidder.code);
-    }
-  }, delayMs);
-}
-
-function calculateAiValuation(room, franchise, player) {
-  const rating = player.overallRating || 70;
-  const basePrice = player.basePrice || 0.20;
-  const squad = franchise.squad || [];
-  const playerRole = player.role || 'Batter';
-
-  let roleNeedMultiplier = 1.0;
-  const batters = squad.filter(p => (p.role || '').includes('Batter')).length;
-  const bowlers = squad.filter(p => (p.role || '').includes('Bowler') || (p.role || '').includes('Spinner')).length;
-  const allrounders = squad.filter(p => (p.role || '').includes('All-rounder')).length;
-  const keepers = squad.filter(p => p.isWicketkeeper).length;
-
-  if (player.isWicketkeeper && keepers === 0) roleNeedMultiplier *= 1.45;
-  if (playerRole.includes('Bowler') && bowlers < 4) roleNeedMultiplier *= 1.35;
-  if (playerRole.includes('Batter') && batters < 4) roleNeedMultiplier *= 1.25;
-  if (playerRole.includes('All-rounder') && allrounders < 3) roleNeedMultiplier *= 1.30;
-
-  let ratingMultiplier = 1.0;
-  if (rating >= 90) ratingMultiplier = 3.5;
-  else if (rating >= 80) ratingMultiplier = 2.4;
-  else if (rating >= 72) ratingMultiplier = 1.6;
-  else if (rating >= 65) ratingMultiplier = 1.1;
-  else ratingMultiplier = 0.85;
-
-  const purseFactor = Math.min(1.4, Math.max(0.6, franchise.purse / (room.config.initialPurse / 2)));
-  const jitter = 0.85 + Math.random() * 0.3;
-  return Number(Math.max(basePrice, basePrice * ratingMultiplier * roleNeedMultiplier * purseFactor * jitter).toFixed(2));
 }
 
 // Parse POST body
@@ -938,6 +867,12 @@ const server = http.createServer(async (req, res) => {
     if (action === 'pause') {
       room.auction.isPaused = true;
       room.auction.status = 'paused';
+      const logEntry = {
+        id: Date.now(),
+        text: `⏸️ Auction paused by Admin ${room.hostName}. Bidding frozen.`,
+        time: new Date().toLocaleTimeString()
+      };
+      room.activityLog.push(logEntry);
       broadcast(room, 'auction_paused', {});
       broadcastState(room);
       res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -947,10 +882,49 @@ const server = http.createServer(async (req, res) => {
     if (action === 'resume') {
       room.auction.isPaused = false;
       room.auction.status = 'bidding';
+      if (room.stage === 'stopped') room.stage = 'active';
+      const logEntry = {
+        id: Date.now(),
+        text: `▶️ Auction resumed by Admin ${room.hostName}. Countdown continuing.`,
+        time: new Date().toLocaleTimeString()
+      };
+      room.activityLog.push(logEntry);
+      runBiddingTimer(room);
       broadcast(room, 'auction_resumed', {});
       broadcastState(room);
       res.writeHead(200, { 'Content-Type': 'application/json' });
       return res.end(JSON.stringify({ success: true, isPaused: false }));
+    }
+
+    if (action === 'stop') {
+      clearRoomTimers(room);
+      room.stage = 'stopped';
+      room.auction.status = 'stopped';
+      room.auction.isPaused = true;
+      const logEntry = {
+        id: Date.now(),
+        text: `🛑 Auction stopped by Admin ${room.hostName}. All current transactions preserved.`,
+        time: new Date().toLocaleTimeString()
+      };
+      room.activityLog.push(logEntry);
+      broadcast(room, 'auction_stopped', { message: 'Auction stopped by Admin.' });
+      broadcastState(room);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ success: true, stage: 'stopped' }));
+    }
+
+    if (action === 'end') {
+      clearRoomTimers(room);
+      completeAuction(room);
+      const logEntry = {
+        id: Date.now(),
+        text: `🏁 Auction ended permanently by Admin ${room.hostName}. Final results compiled.`,
+        time: new Date().toLocaleTimeString()
+      };
+      room.activityLog.push(logEntry);
+      broadcastState(room);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ success: true, stage: 'completed' }));
     }
 
     if (action === 'skip') {
@@ -984,6 +958,30 @@ const server = http.createServer(async (req, res) => {
 
     res.writeHead(400, { 'Content-Type': 'application/json' });
     return res.end(JSON.stringify({ success: false, message: 'Unknown action' }));
+  }
+
+  // REST API: In-room chat & activity messaging
+  if ((pathname === '/api/room/chat' || pathname === '/api/chat') && req.method === 'POST') {
+    const body = await parseBody(req);
+    const roomId = (body.roomId || '').trim().toUpperCase();
+    const room = rooms[roomId];
+    if (!room) {
+      res.writeHead(404, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ success: false, message: 'Room not found' }));
+    }
+    const msg = {
+      id: Date.now(),
+      user: body.userName || 'Participant',
+      team: body.franchiseCode || null,
+      text: (body.text || '').trim(),
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+    if (!room.chatMessages) room.chatMessages = [];
+    room.chatMessages.push(msg);
+    if (room.chatMessages.length > 80) room.chatMessages.shift();
+    broadcast(room, 'chat_message', msg);
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ success: true, message: msg }));
   }
 
   // REST API: Get players

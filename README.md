@@ -1,96 +1,105 @@
-
-# 🏏 IPL Auction Arena 2026 - Autonomous Real-time Multiplayer Platform
+# 🏏 IPL Auction Arena 2026 — Professional Real-Time Bidding Platform
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/yuvarajsuri673/ipl-auction-arena-2026)
-[![Tests Passing](https://img.shields.io/badge/Acceptance%20Tests-17%2F17%20Passed-10b981.svg)](file:///test/acceptance_test.js)
-[![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](file:///package.json)
 
-A full-stack, autonomous real-time multiplayer IPL Auction web application built with **pure Node.js**, **Web Audio synthesis**, and **Server-Sent Events (SSE)**. Pre-loaded with the complete **250-player pool** from the official IPL 2026 dataset.
+IPL Auction Arena 2026 is a professional, mobile-first, real-time multiplayer cricket bidding platform built for 10 IPL franchises with **Strictly Human Participants Only (Zero AI Bots)**.
 
 ---
 
-## 🌟 Core Highlights & Non-Negotiable Specifications
+## 🌟 Key Features
 
-1. **Autonomous Server-Driven Auction Engine**:
-   - The Admin creates the room, participants join, each selects a franchise, the Admin configures the rules (Purse, Squad size, Overseas limit, Increments, Timer), and clicks **START AUCTION**.
-   - **After that, the system does everything**:
-     - Presents players automatically on the podium.
-     - Opens bidding and manages the countdown timer.
-     - Accepts sequential bids in real-time.
-     - Declares **SOLD** (with purse deduction & squad addition) or **UNSOLD**.
-     - Intermission countdown shows winning franchise and price.
-     - Smoothly transitions to the next player automatically.
-     - Automatically completes the auction when all lots are processed!
-   - **Browser-Independent Server Process**: Even if the Admin closes their laptop or temporarily loses connection, the server continues the countdown and finalizes SOLD/UNSOLD decisions reliably.
+### 1. Strictly Human Participants Only (Zero AI Bots)
+- **No AI bots or automated computer bidders**: Only real human managers can claim and operate franchises.
+- **Unclaimed Team Protection**: Any franchise without a real human manager remains safely marked as **Available**.
+- **Protected Ownership**: Disconnections do not transfer franchises to bots; reconnecting managers instantly resume control.
 
-2. **Clean, Uncluttered Dashboard Layout ("Do Not Overcrowd")**:
-   - **Left Board**: All 10 IPL Franchises (CSK, MI, RCB, KKR, RR, SRH, DC, PBKS, GT, LSG) visible to everyone with real-time purse balances and squad counts.
-   - **Center Stage**: The Player Podium focal point with player rating, role, 2026 season stats, base price, animated radial countdown timer, and big high-contrast bid button.
-   - **Right Side Tabbed Utilities**:
-     - ⚡ **Live Commentary Feed**: Real-time bid log and gavel announcements.
-     - 📝 **Private Strategy Notes**: 100% private per user, persists across browser refreshes and reconnects in `localStorage`, complete with live budget & reserve calculator.
-     - 📊 **Auction Analytics**: Processed lots progress bar, total tournament spend, and leaderboard of highest player buys.
+### 2. Reference-Matched Modern Sports UI/UX
+- **Design System**: Deep obsidian black surfaces (`#0d0f15`, `#171a24`), vibrant orange CTAs (`#ff6b00`), electric purple timer badges (`#a855f7`), and emerald green currency metrics (`#22c55e`).
+- **Team Circle Grid**: 5x2 circular franchise badges with official team colors (MI, CSK, RCB, KKR, DC, PBKS, RR, SRH, GT, LSG) and active glowing orange borders.
+- **Both Light & Dark Modes**: Fully designed obsidian dark theme and clean white light theme with instant persistent switching.
 
-3. **Strict Official IPL Budget & Roster Regulations**:
-   - Default Starting Purse: **₹100.00 Cr** (Host-configurable to ₹120 Cr, ₹90 Cr, etc.)
-   - Squad Size Limits: **18 Minimum - 25 Maximum**
-   - Overseas Player Limit: Maximum **8 Overseas Players** per franchise
-   - **Reserve Purse Protection**: Mathematically locks the minimum required reserve (`remaining slots needed × ₹0.20 Cr`) so no team can bid themselves into an invalid roster!
-   - Concurrent Bid Protection: Simultaneous bids are processed strictly sequentially. Old bids are rejected with instantaneous UI feedback.
+### 3. Focused Live Bidding Screen
+- **Desktop 3-Column Layout**:
+  - **Left**: 10 Franchises list with prominent remaining purse, squad count, and eligibility.
+  - **Center (Visual Priority)**: Current player podium, photo/rating, 3 separate prices (*Base Price*, *Current Bid*, *Next Valid Bid*), countdown timer, and large single `[ PLACE BID — ₹X.XX Cr ]` button.
+  - **Right**: Real-time gavel activity feed with highlighted latest bids.
+- **Mobile-First Layout**: Center bidding podium occupies full view with zero horizontal scrolling; mobile segmented pills enable one-thumb inspection of Teams and Activity.
 
----
+### 4. Admin Lifecycle Controls
+- **Start Auction**: Confirmation summary modal displaying manager count, starting purse, squad limits, and timer before locking config.
+- **Pause Auction**: Freezes countdown, halts incoming bids, preserves active lot and timer across all participants.
+- **Resume Auction**: Resumes countdown from exact second, restores bidding.
+- **Stop Auction**: Safely halts active bidding, preserves completed purchases and state.
+- **End Auction**: Permanently concludes auction, compiles final results and leaderboard.
+- **Unsold Round**: Optional final round bringing unsold players back for a second chance.
 
-## 🧪 Comprehensive Acceptance Test Suite (17 / 17 Passed)
-
-To run the automated acceptance test suite:
-```bash
-npm test
-```
-
-| Test # | Acceptance Test Case | Status |
-|---|---|---|
-| **TEST 1** | Admin creates a room and shares invitation link | ✅ **PASSED** |
-| **TEST 2** | Multiple real participants join using link | ✅ **PASSED** |
-| **TEST 3** | Each participant selects exactly one available franchise | ✅ **PASSED** |
-| **TEST 4** | Admin configures purse, squad size, overseas limit, increments, and timer | ✅ **PASSED** |
-| **TEST 5** | Admin starts the auction | ✅ **PASSED** |
-| **TEST 6** | The first player appears automatically and bidding starts | ✅ **PASSED** |
-| **TEST 7** | A participant bids and everyone sees updated highest bid | ✅ **PASSED** |
-| **TEST 8** | Timer expires with highest bidder; player automatically SOLD | ✅ **PASSED** |
-| **TEST 9** | Winning franchise's purse and squad update for everyone | ✅ **PASSED** |
-| **TEST 10** | A player receives no bids; player automatically UNSOLD | ✅ **PASSED** |
-| **TEST 11** | Next player appears automatically | ✅ **PASSED** |
-| **TEST 12** | Franchise at overseas limit cannot bid for overseas player | ✅ **PASSED** |
-| **TEST 13** | Franchise at maximum squad size (25) cannot place additional bids | ✅ **PASSED** |
-| **TEST 14** | Participant refreshes browser and recovers correct auction state | ✅ **PASSED** |
-| **TEST 15** | Two participants bid simultaneously; only valid sequential bids accepted | ✅ **PASSED** |
-| **TEST 16** | Strategy notes remain private and persist after reconnecting | ✅ **PASSED** |
-| **TEST 17** | Final player processed and auction completes automatically | ✅ **PASSED** |
+### 5. 7 Dedicated Navigation Sections
+1. **Dashboard**: Tournament progress, active lot spotlight, franchise leaderboard.
+2. **Live Auction**: Compact room lobby with chat & 3-column live bidding podium.
+3. **Teams & Squads**: 10 franchise cards with View Squad modal organized into 4 cricket roles (*Batters, Wicketkeepers, All-rounders, Bowlers*).
+4. **Players**: 250 real players from CSV with search, filters (role, nationality, overseas, status), and Admin pre-auction price editor.
+5. **Auction Results**: Chronological gavel decisions, hammer prices, winning franchises.
+6. **My Strategy Notes**: 100% private to each user, auto-saved in `localStorage`, live budget & reserve calculator.
+7. **Settings**: Voice assistant toggle (default OFF), sound effects, theme switcher, and admin control panel.
 
 ---
 
-## 🚀 Instant Deployment to Free Websites
+## 🚀 Quick Start
 
-### Option A: 1-Click Deploy to Render (Recommended Free Web Service)
-1. Fork or push to your GitHub account:
-   [https://github.com/yuvarajsuri673/ipl-auction-arena-2026](https://github.com/yuvarajsuri673/ipl-auction-arena-2026)
-2. Click the **Deploy to Render** button above or link your repo at [render.com](https://render.com).
-3. Render automatically reads [`render.yaml`](file:///render.yaml), builds, and hosts the persistent Node.js SSE web service with free HTTPS.
+### Prerequisites
+- Node.js (v18+)
 
-### Option B: Run Locally or on Any VPS
+### Installation
 ```bash
 git clone https://github.com/yuvarajsuri673/ipl-auction-arena-2026.git
 cd ipl-auction-arena-2026
 npm install
-npm start
 ```
-Open **`http://localhost:3000`** in any web browser.
+
+### Running Locally
+```bash
+npm start
+# Server starts on http://localhost:3000
+```
+
+### Running Tests
+```bash
+npm test
+# Runs 17 / 17 Acceptance Tests + HTTP Network Integration Tests
+```
 
 ---
 
-## 👥 How to Play in Multiplayer
-1. Open the app as Host and click **"Create Auction Room"**.
-2. Click **"Copy Invite Link"** and send it to your friends.
-3. Friends open the link, enter their name, and choose their IPL franchise.
-4. Host clicks **"START AUCTION NOW"**.
-5. The autonomous engine takes over and orchestrates the entire live mega auction!
+## 📋 Standardised Pricing & Increments
+
+### Base Price Range
+- Minimum: ₹75 Lakhs (₹0.75 Cr)
+- Maximum: ₹2.00 Crore
+- Derived strictly from real ratings, roles, and stats across the 250-player CSV.
+
+### Bidding Increments
+| Current Bid Range | Mandatory Increment |
+|---|---|
+| ₹75 Lakhs – below ₹2.00 Cr | **+₹10 Lakhs (0.10 Cr)** |
+| ₹2.00 Cr – below ₹5.00 Cr | **+₹25 Lakhs (0.25 Cr)** |
+| ₹5.00 Cr – below ₹10.00 Cr | **+₹50 Lakhs (0.50 Cr)** |
+| ₹10.00 Cr and above | **+₹1.00 Crore (1.00 Cr)** |
+
+---
+
+## 🛡️ Acceptance Test Suite
+All 17 acceptance requirements are validated:
+```
+========================================================
+🎉 ALL 17 / 17 ACCEPTANCE TESTS PASSED SUCCESSFULLY!
+========================================================
+🌐 Testing Real HTTP Network Endpoints...
+  ✓ POST /api/room/create works
+  ✓ POST /api/room/join works
+  ✓ POST /api/room/claim-team works
+  ✓ POST /api/room/update-config works
+  ✓ POST /api/room/start-auction works
+  ✓ GET /api/state returns live auction snapshot
+  ✓ POST /api/room/bid processes live bids
+🎉 ALL HTTP NETWORK TESTS PASSED!
+```
